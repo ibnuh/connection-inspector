@@ -1,0 +1,29 @@
+{
+  "name": "connection-inspector",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "lint": "eslint .",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "nuxt": "^3.13.0",
+    "vue": "^3.5.0",
+    "shadcn-vue": "^0.10.0",
+    "lucide-vue-next": "^0.474.0"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.0",
+    "@types/node": "^22.0.0",
+    "@vueuse/core": "^11.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-vue": "^9.0.0",
+    "typescript": "^5.6.0",
+    "vue-tsc": "^2.0.0"
+  }
+}
+
+
