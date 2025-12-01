@@ -919,18 +919,48 @@ onMounted(() => {
                 {{ ipInfo.abuse.address }}
               </span>
             </dd>
-            <dd v-if="ipInfo?.location" class="text-[0.7rem] text-slate-500">
-              <span>
+            <dd v-if="ipInfo?.location" class="space-y-0.5 text-[0.7rem] text-slate-500">
+              <p>
                 {{ ipInfo.location.city || 'Unknown city' }},
                 {{ ipInfo.location.state || 'Unknown region' }},
                 {{ ipInfo.location.country || 'Unknown country' }}
-              </span>
-              <span v-if="ipInfo.location.zip">
-                • {{ ipInfo.location.zip }}
-              </span>
-              <span v-if="ipInfo.location.timezone" class="block">
+                <span v-if="ipInfo.location.zip">
+                  • {{ ipInfo.location.zip }}
+                </span>
+              </p>
+              <p v-if="ipInfo.location.timezone">
                 Timezone: {{ ipInfo.location.timezone }}
-              </span>
+              </p>
+              <p
+                v-if="ipInfo.location.latitude != null && ipInfo.location.longitude != null"
+                class="flex flex-wrap items-center gap-1.5"
+              >
+                <span class="text-slate-400">
+                  Lat/Lng:
+                  <span class="font-medium text-slate-200">
+                    {{ ipInfo.location.latitude.toFixed(4) }},
+                    {{ ipInfo.location.longitude.toFixed(4) }}
+                  </span>
+                </span>
+                <span class="hidden text-slate-600 sm:inline">•</span>
+                <a
+                  class="inline-flex items-center gap-1 text-sky-400 underline-offset-4 hover:underline"
+                  :href="`https://www.openstreetmap.org/?mlat=${ipInfo.location.latitude}&mlon=${ipInfo.location.longitude}&zoom=10`"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  OpenStreetMap
+                </a>
+                <span class="text-slate-600">/</span>
+                <a
+                  class="inline-flex items-center gap-1 text-sky-400 underline-offset-4 hover:underline"
+                  :href="`https://www.google.com/maps/@${ipInfo.location.latitude},${ipInfo.location.longitude},10z`"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Google Maps
+                </a>
+              </p>
             </dd>
             <dd v-if="ipInfo?.elapsed_ms != null" class="text-[0.7rem] text-slate-500">
               Lookup latency:
