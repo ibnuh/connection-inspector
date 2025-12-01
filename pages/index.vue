@@ -137,6 +137,7 @@ const showRawIpPayload = ref(false)
 
 // Export / share state
 const copySummaryStatus = ref<'idle' | 'copied' | 'error'>('idle')
+const copyDebugStatus = ref<'idle' | 'copied' | 'error'>('idle')
 
 // Privacy / fingerprint hints
 const privacyNotes = computed(() => {
@@ -427,6 +428,79 @@ async function copySummaryToClipboard() {
     copySummaryStatus.value = 'error'
     setTimeout(() => {
       copySummaryStatus.value = 'idle'
+    }, 3000)
+  }
+}
+
+function buildDebugSnippet() {
+  const ip = ipInfo.value?.ip ?? 'Unknown IP'
+  const locParts: string[] = []
+  if (ipInfo.value?.location?.city) locParts.push(ipInfo.value.location.city)
+  if (ipInfo.value?.location?.state) locParts.push(ipInfo.value.location.state)
+  if (ipInfo.value?.location?.country) locParts.push(ipInfo.value.location.country)
+  const location = locParts.join(', ') || 'Unknown location'
+
+  const asn = ipInfo.value?.asn?.asn != null ? `AS${ipInfo.value.asn.asn}` : 'Unknown ASN'
+  const org = ipInfo.value?.asn?.org ?? ipInfo.value?.company?.name ?? 'Unknown org'
+
+  const riskFlags: string[] = []
+  if (ipInfo.value?.is_tor) riskFlags.push('Tor')
+  if (ipInfo.value?.is_vpn) riskFlags.push('VPN')
+  if (ipInfo.value?.is_proxy) riskFlags.push('Proxy')
+  if (ipInfo.value?.is_datacenter) riskFlags.push('Datacenter')
+  if (ipInfo.value?.is_bogon) riskFlags.push('Bogon')
+
+  const riskLine = riskFlags.length ? riskFlags.join(', ') : 'None reported'
+
+  const browserLine = userAgent.value || 'Unknown browser'
+
+  const screenLine =
+    screenWidth.value && screenHeight.value
+      ? `${screenWidth.value}x${screenHeight.value} @ ${devicePixelRatio.value ?? 1}x`
+      : 'Unknown'
+
+  const parts = [
+    `IP: ${ip} (${location})`,
+    `ASN/Org: ${asn} • ${org}`,
+    `Risk flags: ${riskLine} • Gauge: ${ipRiskBand.value} (${ipRiskScore.value ?? 'n/a'}/100)`,
+    `Browser: ${browserLine}`,
+    `Screen: ${screenLine}`,
+    `Timezone: ${timezone.value ?? 'Unknown'} • Languages: ${languages.value.join(', ') || 'Unknown'}`,
+    `Generated at: ${new Date().toISOString()}`
+  ]
+
+  return parts.join('\n')
+}
+
+async function copyDebugSnippet() {
+  copyDebugStatus.value = 'idle'
+  const text = buildDebugSnippet()
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      copyDebugStatus.value = 'copied'
+      setTimeout(() => {
+        copyDebugStatus.value = 'idle'
+      }, 2000)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      copyDebugStatus.value = 'copied'
+      setTimeout(() => {
+        copyDebugStatus.value = 'idle'
+      }, 2000)
+    }
+  } catch {
+    copyDebugStatus.value = 'error'
+    setTimeout(() => {
+      copyDebugStatus.value = 'idle'
     }, 3000)
   }
 }
@@ -1093,6 +1167,25 @@ onMounted(() => {
         >
           <span class="h-1.5 w-1.5 rounded-full bg-sky-400" />
           <span>Download JSON snapshot</span>
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/80 px-3 py-1 text-[0.7rem] font-medium text-slate-100 hover:border-slate-600 hover:bg-slate-900 active:bg-slate-800"
+          @click="copyDebugSnippet"
+        >
+          <span
+            class="h-1.5 w-1.5 rounded-full"
+            :class="copyDebugStatus === 'copied' ? 'bg-emerald-400' : copyDebugStatus === 'error' ? 'bg-rose-400' : 'bg-slate-500'"
+          />
+          <span v-if="copyDebugStatus === 'copied'">
+            Copied debug snippet
+          </span>
+          <span v-else-if="copyDebugStatus === 'error'">
+            Failed to copy snippet
+          </span>
+          <span v-else>
+            Copy debug snippet
+          </span>
         </button>
       </div>
     </section>
