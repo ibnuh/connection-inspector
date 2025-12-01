@@ -338,9 +338,8 @@ async function fetchIpInfo() {
   }
 }
 
-async function copySummaryToClipboard() {
-  copySummaryStatus.value = 'idle'
-  const summary = {
+function buildSnapshotSummary() {
+  return {
     ip: ipInfo.value,
     browser: {
       userAgent: userAgent.value,
@@ -395,6 +394,11 @@ async function copySummaryToClipboard() {
       generatedAt: new Date().toISOString()
     }
   }
+}
+
+async function copySummaryToClipboard() {
+  copySummaryStatus.value = 'idle'
+  const summary = buildSnapshotSummary()
 
   const text = JSON.stringify(summary, null, 2)
 
@@ -425,6 +429,22 @@ async function copySummaryToClipboard() {
       copySummaryStatus.value = 'idle'
     }, 3000)
   }
+}
+
+function downloadSnapshotJson() {
+  const summary = buildSnapshotSummary()
+  const blob = new Blob([JSON.stringify(summary, null, 2)], {
+    type: 'application/json'
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  a.href = url
+  a.download = `connection-inspector-${stamp}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 function markPermissionChecked(name: string, state: string | null) {
@@ -1045,6 +1065,35 @@ onMounted(() => {
             </div>
           </div>
         </div>
+      </div>
+      <div class="sm:col-span-2 flex flex-wrap items-center justify-end gap-2 pt-1 text-xs">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/80 px-3 py-1 text-[0.7rem] font-medium text-slate-100 hover:border-slate-600 hover:bg-slate-900 active:bg-slate-800"
+          @click="copySummaryToClipboard"
+        >
+          <span
+            class="h-1.5 w-1.5 rounded-full"
+            :class="copySummaryStatus === 'copied' ? 'bg-emerald-400' : copySummaryStatus === 'error' ? 'bg-rose-400' : 'bg-slate-500'"
+          />
+          <span v-if="copySummaryStatus === 'copied'">
+            Copied summary JSON
+          </span>
+          <span v-else-if="copySummaryStatus === 'error'">
+            Failed to copy
+          </span>
+          <span v-else>
+            Copy summary as JSON
+          </span>
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/80 px-3 py-1 text-[0.7rem] font-medium text-slate-100 hover:border-slate-600 hover:bg-slate-900 active:bg-slate-800"
+          @click="downloadSnapshotJson"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-sky-400" />
+          <span>Download JSON snapshot</span>
+        </button>
       </div>
     </section>
 
