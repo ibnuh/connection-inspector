@@ -156,6 +156,34 @@ const privacyNotes = computed(() => {
   return notes
 })
 
+const fingerprintScore = computed<number | null>(() => {
+  // Very rough, client-only heuristic; values are arbitrary and for demo purposes only.
+  let score = 0
+
+  if (languages.value.length > 1) score += 15
+  if (gpuRenderer.value) score += 15
+  if (supportsWebRTC.value) score += 10
+  if (supportsNotifications.value) score += 5
+  if (supportsClipboard.value) score += 5
+  if (supportsIndexedDB.value) score += 5
+  if (!doNotTrack.value) score += 5
+
+  if (ipInfo.value?.location?.timezone && timezone.value && ipInfo.value.location.timezone !== timezone.value) {
+    score += 10
+  }
+
+  if (score === 0) return 5
+  return Math.max(0, Math.min(100, score))
+})
+
+const fingerprintBand = computed<'Low' | 'Medium' | 'High' | 'Unknown'>(() => {
+  const s = fingerprintScore.value
+  if (s == null) return 'Unknown'
+  if (s < 30) return 'Low'
+  if (s < 70) return 'Medium'
+  return 'High'
+})
+
 // GPU / WebGL renderer info
 const gpuRenderer = ref<string | null>(null)
 const gpuVendor = ref<string | null>(null)
@@ -1438,6 +1466,40 @@ onMounted(() => {
             <p v-else class="mt-1 text-[0.7rem] text-slate-500">
               No strong privacy signals detected beyond standard browser defaults.
             </p>
+            <div class="mt-2">
+              <p class="mb-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Fingerprintability
+              </p>
+              <div class="flex items-center justify-between text-[0.7rem] text-slate-300">
+                <span>
+                  Estimated entropy:
+                  <span class="font-medium text-slate-100">
+                    {{ fingerprintBand }}
+                  </span>
+                </span>
+                <span v-if="fingerprintScore != null" class="tabular-nums text-slate-400">
+                  {{ fingerprintScore }} / 100
+                </span>
+              </div>
+              <div class="mt-1 h-1 w-full overflow-hidden rounded-full bg-slate-800">
+                <div
+                  v-if="fingerprintScore != null"
+                  class="h-full rounded-full transition-all"
+                  :class="[
+                    fingerprintBand === 'Low' && 'bg-emerald-400',
+                    fingerprintBand === 'Medium' && 'bg-amber-400',
+                    fingerprintBand === 'High' && 'bg-rose-400',
+                    fingerprintBand === 'Unknown' && 'bg-slate-500'
+                  ]"
+                  :style="{ width: `${fingerprintScore}%` }"
+                />
+              </div>
+              <p class="mt-1 text-[0.65rem] text-slate-500">
+                Rough, client-only estimate based on languages, storage, WebRTC, GPU info and timezone signals.
+                Higher does not necessarily mean you are uniquely identifiable, only that your environment
+                exposes more traits.
+              </p>
+            </div>
           </div>
         </div>
         <button
