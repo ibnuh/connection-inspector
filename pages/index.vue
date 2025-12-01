@@ -152,6 +152,10 @@ const privacyNotes = computed(() => {
   return notes
 })
 
+// GPU / WebGL renderer info
+const gpuRenderer = ref<string | null>(null)
+const gpuVendor = ref<string | null>(null)
+
 const jsEnabled = computed(() => true)
 
 const ipStatusLabel = computed(() => {
@@ -476,6 +480,32 @@ onMounted(() => {
     permissionCamera.value = 'unavailable'
     permissionMicrophone.value = 'unavailable'
     permissionClipboardRead.value = 'unavailable'
+  }
+
+  // GPU / WebGL renderer (best-effort)
+  try {
+    const canvas = document.createElement('canvas')
+    const gl = (canvas.getContext('webgl') ||
+      canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null
+    if (gl) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
+      if (debugInfo) {
+        const vendor = gl.getParameter(
+          (debugInfo as any).UNMASKED_VENDOR_WEBGL
+        ) as string
+        const renderer = gl.getParameter(
+          (debugInfo as any).UNMASKED_RENDERER_WEBGL
+        ) as string
+        gpuVendor.value = vendor || null
+        gpuRenderer.value = renderer || null
+      } else {
+        gpuRenderer.value = gl.getParameter(gl.RENDERER) as string
+        gpuVendor.value = gl.getParameter(gl.VENDOR) as string
+      }
+    }
+  } catch {
+    gpuRenderer.value = null
+    gpuVendor.value = null
   }
 
   fetchIpInfo()
@@ -1076,6 +1106,30 @@ onMounted(() => {
             </dd>
           </div>
         </dl>
+
+        <div class="mt-2 rounded-xl border border-slate-800/80 bg-slate-950/60 px-3 py-2 text-xs text-slate-400">
+          <p class="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            GPU / Renderer (WebGL)
+          </p>
+          <p class="text-[0.7rem] text-slate-300">
+            <span v-if="gpuRenderer">
+              {{ gpuRenderer }}
+            </span>
+            <span v-else>
+              Not reported; WebGL renderer is unavailable or blocked.
+            </span>
+          </p>
+          <p v-if="gpuVendor" class="mt-0.5 text-[0.7rem] text-slate-500">
+            Vendor:
+            <span class="font-medium text-slate-300">
+              {{ gpuVendor }}
+            </span>
+          </p>
+          <p class="mt-0.5 text-[0.65rem] text-slate-500">
+            This information comes from a lightweight WebGL context and can sometimes differ from the
+            underlying physical GPU name.
+          </p>
+        </div>
 
         <div class="mt-3 rounded-xl border border-slate-800/80 bg-slate-950/60 px-3 py-2 text-xs text-slate-400">
           <p class="mb-1 font-medium text-slate-200">
