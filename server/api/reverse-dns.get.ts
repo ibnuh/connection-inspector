@@ -1,9 +1,10 @@
 import { defineEventHandler, getQuery, getRequestIP } from 'h3'
-import { promises as dns } from 'node:dns'
+import { Resolver, promises as dns } from 'node:dns'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const ipParam = typeof query.ip === 'string' ? query.ip.trim() : ''
+  const resolverParam = typeof query.resolver === 'string' ? query.resolver.trim() : ''
 
   const ip =
     ipParam ||
@@ -20,19 +21,36 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const hostnames = await dns.reverse(ip)
+    let hostnames: string[]
+
+    if (resolverParam) {
+      const resolver = new Resolver()
+      resolver.setServers([resolverParam])
+      hostnames = await new Promise<string[]>((resolve, reject) => {
+        resolver.reverse(ip, (err, records) => {
+          if (err) return reject(err)
+          resolve(records)
+        })
+      })
+    } else {
+      hostnames = await dns.reverse(ip)
+    }
+
     return {
       ok: true,
       ip,
+      resolver: resolverParam || null,
       hostnames
     }
   } catch (error) {
     return {
       ok: false,
       ip,
+      resolver: resolverParam || null,
       error: (error as Error).message || 'Reverse DNS lookup failed.'
     }
   }
 })
+
 
 

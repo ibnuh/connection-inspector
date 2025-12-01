@@ -156,6 +156,7 @@ const serverViewData = ref<{
 const reverseDnsLoading = ref(false)
 const reverseDnsError = ref<string | null>(null)
 const reverseDnsHostnames = ref<string[] | null>(null)
+const reverseDnsResolver = ref<string>('')
 
 // Privacy / fingerprint hints
 const privacyNotes = computed(() => {
@@ -568,7 +569,10 @@ async function runReverseDnsLookup() {
       hostnames?: string[]
       error?: string
     }>('/api/reverse-dns', {
-      params: ipInfo.value?.ip ? { ip: ipInfo.value.ip } : undefined
+      params: {
+        ...(ipInfo.value?.ip ? { ip: ipInfo.value.ip } : {}),
+        ...(reverseDnsResolver.value.trim() ? { resolver: reverseDnsResolver.value.trim() } : {})
+      }
     })
 
     if (!res.ok) {
