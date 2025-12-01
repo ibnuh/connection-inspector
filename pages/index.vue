@@ -166,6 +166,53 @@ function formatAbuserScore(score: unknown): string {
   }
 }
 
+function parseAbuserScoreNumber(score: unknown): number | null {
+  if (score == null) return null
+  if (typeof score === 'number') return score
+  if (typeof score === 'string') {
+    const match = score.match(/[\d.]+/)
+    if (!match) return null
+    const n = Number(match[0])
+    return Number.isFinite(n) ? n : null
+  }
+  return null
+}
+
+const ipRiskScore = computed<number | null>(() => {
+  const info = ipInfo.value
+  if (!info) return null
+
+  let score = 0
+
+  if (info.is_abuser) score += 50
+  if (info.is_tor) score += 20
+  if (info.is_proxy) score += 10
+  if (info.is_vpn) score += 10
+  if (info.is_datacenter) score += 10
+  if (info.is_bogon) score += 30
+
+  const asnScore = parseAbuserScoreNumber(info.asn?.abuser_score)
+  if (asnScore != null) {
+    score += Math.min(asnScore * 50, 20)
+  }
+
+  const companyScore = parseAbuserScoreNumber(info.company?.abuser_score)
+  if (companyScore != null) {
+    score += Math.min(companyScore * 50, 20)
+  }
+
+  if (score === 0) return 5
+  return Math.max(0, Math.min(100, Math.round(score)))
+})
+
+const ipRiskBand = computed<'Low' | 'Medium' | 'High' | 'Unknown'>(() => {
+  const s = ipRiskScore.value
+  if (s == null) return 'Unknown'
+  if (s < 30) return 'Low'
+  if (s < 70) return 'Medium'
+  return 'High'
+})
+
 async function fetchIpInfo() {
   loadingIp.value = true
   ipError.value = null
@@ -396,6 +443,40 @@ onMounted(() => {
           >
             Mobile network
           </span>
+        </div>
+
+        <div class="mt-3 space-y-1.5 rounded-xl border border-slate-800/80 bg-slate-950/60 p-3">
+          <div class="flex items-center justify-between text-xs text-slate-300">
+            <span class="font-medium">
+              Risk level
+              <span v-if="ipRiskBand !== 'Unknown'">
+                ({{ ipRiskBand }})
+              </span>
+            </span>
+            <span v-if="ipRiskScore != null" class="tabular-nums text-slate-400">
+              {{ ipRiskScore }} / 100
+            </span>
+            <span v-else class="text-slate-500">
+              Not yet available
+            </span>
+          </div>
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+            <div
+              v-if="ipRiskScore != null"
+              class="h-full rounded-full transition-all"
+              :class="[
+                ipRiskBand === 'Low' && 'bg-emerald-400',
+                ipRiskBand === 'Medium' && 'bg-amber-400',
+                ipRiskBand === 'High' && 'bg-rose-400',
+                ipRiskBand === 'Unknown' && 'bg-slate-500'
+              ]"
+              :style="{ width: `${ipRiskScore}%` }"
+            />
+          </div>
+          <p class="text-[0.7rem] text-slate-500">
+            Calculated from Tor / proxy / VPN flags, datacenter status, bogon range, and abuse scores from
+            ipapi.is.
+          </p>
         </div>
 
         <p v-if="ipError" class="mt-2 text-xs text-rose-400">
