@@ -121,6 +121,13 @@ const supportsIndexedDB = ref<boolean | null>(null)
 const storageQuota = ref<number | null>(null)
 const storageUsage = ref<number | null>(null)
 
+// Permissions status (best-effort)
+const permissionGeolocation = ref<string | null>(null)
+const permissionNotifications = ref<string | null>(null)
+const permissionCamera = ref<string | null>(null)
+const permissionMicrophone = ref<string | null>(null)
+const permissionClipboardRead = ref<string | null>(null)
+
 const jsEnabled = computed(() => true)
 
 const ipStatusLabel = computed(() => {
@@ -283,6 +290,36 @@ onMounted(() => {
   })()
   supportsWebGPU.value = 'gpu' in navigator
   supportsIndexedDB.value = 'indexedDB' in window
+
+  // Permissions (if supported)
+  const navWithPermissions = navigator as Navigator & {
+    permissions?: {
+      query: (permissionDesc: { name: PermissionName | string }) => Promise<PermissionStatus>
+    }
+  }
+
+  if (navWithPermissions.permissions) {
+    const safeQuery = async (name: PermissionName | string, target: typeof permissionGeolocation) => {
+      try {
+        const status = await navWithPermissions.permissions!.query({ name })
+        target.value = status.state
+      } catch {
+        target.value = 'unavailable'
+      }
+    }
+
+    void safeQuery('geolocation', permissionGeolocation)
+    void safeQuery('notifications', permissionNotifications)
+    void safeQuery('camera', permissionCamera)
+    void safeQuery('microphone', permissionMicrophone)
+    void safeQuery('clipboard-read', permissionClipboardRead)
+  } else {
+    permissionGeolocation.value = 'unavailable'
+    permissionNotifications.value = 'unavailable'
+    permissionCamera.value = 'unavailable'
+    permissionMicrophone.value = 'unavailable'
+    permissionClipboardRead.value = 'unavailable'
+  }
 
   fetchIpInfo()
 })
@@ -475,6 +512,52 @@ onMounted(() => {
                 <span>IndexedDB</span>
               </li>
             </ul>
+          </div>
+
+          <div class="border-t border-slate-800 pt-2">
+            <p class="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Permissions (browser view)
+            </p>
+            <ul class="grid grid-cols-2 gap-2 text-[0.7rem] sm:grid-cols-3">
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="permissionGeolocation === 'granted' ? 'bg-emerald-400' : permissionGeolocation === 'denied' ? 'bg-rose-400' : permissionGeolocation === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                />
+                <span>Geolocation: {{ permissionGeolocation ?? 'unknown' }}</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="permissionNotifications === 'granted' ? 'bg-emerald-400' : permissionNotifications === 'denied' ? 'bg-rose-400' : permissionNotifications === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                />
+                <span>Notifications: {{ permissionNotifications ?? 'unknown' }}</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="permissionCamera === 'granted' ? 'bg-emerald-400' : permissionCamera === 'denied' ? 'bg-rose-400' : permissionCamera === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                />
+                <span>Camera: {{ permissionCamera ?? 'unknown' }}</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="permissionMicrophone === 'granted' ? 'bg-emerald-400' : permissionMicrophone === 'denied' ? 'bg-rose-400' : permissionMicrophone === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                />
+                <span>Microphone: {{ permissionMicrophone ?? 'unknown' }}</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="permissionClipboardRead === 'granted' ? 'bg-emerald-400' : permissionClipboardRead === 'denied' ? 'bg-rose-400' : permissionClipboardRead === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                />
+                <span>Clipboard read: {{ permissionClipboardRead ?? 'unknown' }}</span>
+              </li>
+            </ul>
+            <p class="mt-1 text-[0.65rem] text-slate-500">
+              This table reflects the browser&rsquo;s current understanding of permission state for this origin and may not be available in all browsers.
+            </p>
           </div>
         </div>
       </div>
