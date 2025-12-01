@@ -117,6 +117,10 @@ const supportsWebGL = ref<boolean | null>(null)
 const supportsWebGPU = ref<boolean | null>(null)
 const supportsIndexedDB = ref<boolean | null>(null)
 
+// Storage estimation
+const storageQuota = ref<number | null>(null)
+const storageUsage = ref<number | null>(null)
+
 const jsEnabled = computed(() => true)
 
 const ipStatusLabel = computed(() => {
@@ -198,6 +202,23 @@ onMounted(() => {
     localStorageEnabled.value = true
   } catch {
     localStorageEnabled.value = false
+  }
+
+  if ('storage' in navigator && typeof (navigator as Navigator & { storage?: StorageManager }).storage?.estimate === 'function') {
+    ;(navigator as Navigator & { storage: StorageManager }).storage
+      .estimate()
+      .then((estimate) => {
+        if (typeof estimate.quota === 'number') {
+          storageQuota.value = estimate.quota
+        }
+        if (typeof estimate.usage === 'number') {
+          storageUsage.value = estimate.usage
+        }
+      })
+      .catch(() => {
+        storageQuota.value = null
+        storageUsage.value = null
+      })
   }
 
   // Screen & device
@@ -742,6 +763,27 @@ onMounted(() => {
             <li class="flex items-center gap-1.5">
               <span class="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               <span>JavaScript: Enabled</span>
+            </li>
+            <li v-if="storageQuota != null" class="col-span-2 flex flex-col text-[0.7rem] text-slate-400">
+              <span class="flex items-center gap-1.5">
+                <span class="h-1.5 w-1.5 rounded-full bg-sky-400" />
+                <span>
+                  Storage quota:
+                  <span class="font-medium text-slate-200">
+                    {{ (storageQuota / (1024 * 1024)).toFixed(1) }} MB
+                  </span>
+                </span>
+              </span>
+              <span v-if="storageUsage != null" class="ml-3 mt-0.5 text-slate-500">
+                Approx. usage:
+                <span class="font-medium text-slate-200">
+                  {{ (storageUsage / (1024 * 1024)).toFixed(1) }} MB
+                </span>
+              </span>
+            </li>
+            <li v-else class="col-span-2 flex items-center gap-1.5 text-[0.7rem] text-slate-500">
+              <span class="h-1.5 w-1.5 rounded-full bg-slate-600" />
+              <span>Storage quota: Not reported by this browser.</span>
             </li>
           </ul>
         </div>
