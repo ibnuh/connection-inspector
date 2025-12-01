@@ -156,6 +156,9 @@ const privacyNotes = computed(() => {
 const gpuRenderer = ref<string | null>(null)
 const gpuVendor = ref<string | null>(null)
 
+// Connection / session history
+const onlineEvents = ref<{ at: string; online: boolean }[]>([])
+
 const jsEnabled = computed(() => true)
 
 const ipStatusLabel = computed(() => {
@@ -362,6 +365,11 @@ onMounted(() => {
   cookiesEnabled.value = navigator.cookieEnabled
   timezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone ?? null
 
+  onlineEvents.value.push({
+    at: new Date().toLocaleTimeString(),
+    online: !!online.value
+  })
+
   // Storage
   try {
     const key = '__connection_inspector_test__'
@@ -507,6 +515,22 @@ onMounted(() => {
     gpuRenderer.value = null
     gpuVendor.value = null
   }
+
+  // Online/offline event history
+  window.addEventListener('online', () => {
+    online.value = true
+    onlineEvents.value.push({
+      at: new Date().toLocaleTimeString(),
+      online: true
+    })
+  })
+  window.addEventListener('offline', () => {
+    online.value = false
+    onlineEvents.value.push({
+      at: new Date().toLocaleTimeString(),
+      online: false
+    })
+  })
 
   fetchIpInfo()
 })
@@ -732,6 +756,27 @@ onMounted(() => {
                 />
                 <span>IndexedDB</span>
               </li>
+            <li v-if="onlineEvents.length" class="col-span-2 mt-1 text-[0.7rem] text-slate-400">
+              <span class="mr-1 font-medium text-slate-200">
+                Session connectivity:
+              </span>
+              <span
+                v-for="(evt, idx) in onlineEvents.slice(-4)"
+                :key="`${evt.at}-${idx}`"
+                class="inline-flex items-center gap-1 text-[0.7rem]"
+              >
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="evt.online ? 'bg-emerald-400' : 'bg-rose-400'"
+                />
+                <span class="text-slate-400">
+                  {{ evt.online ? 'online' : 'offline' }} at {{ evt.at }}
+                </span>
+                <span v-if="idx < onlineEvents.slice(-4).length - 1" class="mx-1 text-slate-700">
+                  •
+                </span>
+              </span>
+            </li>
             </ul>
           </div>
 
