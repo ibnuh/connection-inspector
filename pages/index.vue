@@ -1,47 +1,83 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
+type AbuseContact = {
+  name?: string
+  address?: string
+  email?: string
+  phone?: string
+}
+
+type DatacenterInfo = {
+  datacenter?: string
+  network?: string
+  country?: string
+  region?: string
+  city?: string
+}
+
+type CompanyInfo = {
+  name?: string
+  abuser_score?: unknown
+  domain?: string
+  type?: string
+  network?: string
+  whois?: string
+}
+
+type AsnInfo = {
+  asn?: number
+  abuser_score?: unknown
+  route?: string
+  descr?: string
+  country?: string
+  active?: boolean
+  org?: string
+  domain?: string
+  abuse?: string
+  type?: string
+  created?: string
+  updated?: string
+  rir?: string
+  whois?: string
+}
+
+type LocationInfo = {
+  is_eu_member?: boolean
+  calling_code?: string
+  currency_code?: string
+  continent?: string
+  country?: string
+  country_code?: string
+  state?: string
+  city?: string
+  latitude?: number
+  longitude?: number
+  zip?: string
+  timezone?: string
+  local_time?: string
+  local_time_unix?: number
+  is_dst?: boolean
+}
+
 type IpApiResponse = {
-  ip: string
-  is_bogon: boolean
-  is_mobile: boolean
-  is_satellite: boolean
-  is_crawler: boolean
-  is_datacenter: boolean
-  is_tor: boolean
-  is_proxy: boolean
-  is_vpn: boolean
-  is_abuser: boolean
-  datacenter?: {
-    datacenter: string
-    domain: string
-    network: string
-  }
-  company?: {
-    name: string
-    abuser_score: string
-    domain: string
-    type: string
-    network: string
-  }
-  asn?: {
-    asn: number
-    abuser_score: string
-    route: string
-    descr: string
-    country: string
-    type: string
-  }
-  location?: {
-    country: string
-    country_code: string
-    state: string
-    city: string
-    latitude: number
-    longitude: number
-    zip: string
-    timezone: string
-  }
+  ip?: string
+  rir?: string
+  is_bogon?: boolean
+  is_mobile?: boolean
+  is_satellite?: boolean
+  is_crawler?: boolean
+  is_datacenter?: boolean
+  is_tor?: boolean
+  is_proxy?: boolean
+  is_vpn?: boolean
+  is_abuser?: boolean
+  datacenter?: DatacenterInfo
+  company?: CompanyInfo
+  abuse?: AbuseContact
+  asn?: AsnInfo
+  location?: LocationInfo
+  elapsed_ms?: number
 }
 
 const ipInfo = ref<IpApiResponse | null>(null)
@@ -92,9 +128,15 @@ const ipStatusTone = computed<'success' | 'warning' | 'danger' | 'neutral'>(() =
   return 'success'
 })
 
-function formatAbuserScore(score?: string): string {
-  if (!score) return 'Unknown'
-  return score
+function formatAbuserScore(score: unknown): string {
+  if (score == null) return 'Unknown'
+  if (typeof score === 'number') return score.toString()
+  if (typeof score === 'string') return score
+  try {
+    return JSON.stringify(score)
+  } catch {
+    return 'Unknown'
+  }
 }
 
 async function fetchIpInfo() {
@@ -301,7 +343,6 @@ onMounted(() => {
               >
                 ipapi.is
               </a>
-              .
             </p>
           </div>
           <button
@@ -352,45 +393,108 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="flex items-start justify-between gap-4 rounded-lg px-3 py-2">
-            <div>
-              <dt class="text-[0.7rem] font-medium text-slate-300">Abuse / block status</dt>
-              <dd class="mt-0.5 text-[0.72rem] text-slate-400">
-                <span v-if="ipInfo">
-                  <span v-if="ipInfo.is_abuser">
-                    Marked as abusive &mdash; likely blocked by many providers.
-                  </span>
-                  <span v-else>
-                    Not flagged as abusive by ipapi.is, but some services may still apply their own checks.
-                  </span>
+          <div class="flex flex-col gap-2 rounded-lg bg-slate-950/60 px-3 py-2">
+            <dt class="text-[0.7rem] font-medium text-slate-300">Abuse & risk</dt>
+            <dd class="mt-0.5 text-[0.72rem] text-slate-400">
+              <span v-if="ipInfo">
+                <span v-if="ipInfo.is_abuser">
+                  Marked as abusive &mdash; this IP or network has elevated abuse reports.
                 </span>
                 <span v-else>
-                  Waiting for IP data&hellip;
+                  Not flagged as abusive by ipapi.is, but other providers may still enforce their own checks.
                 </span>
-              </dd>
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-1 rounded-lg bg-slate-950/60 px-3 py-2">
-            <dt class="text-[0.7rem] font-medium text-slate-300">Provider & ASN</dt>
-            <dd class="mt-0.5 text-[0.72rem] text-slate-400">
-              <span v-if="ipInfo?.company">
-                {{ ipInfo.company.name }} ({{ ipInfo.company.type }})
               </span>
               <span v-else>
-                Provider information unavailable.
+                Waiting for IP data&hellip;
               </span>
             </dd>
-            <dd class="text-[0.7rem] text-slate-500">
-              <span v-if="ipInfo?.asn">
-                ASN {{ ipInfo.asn.asn }} • {{ ipInfo.asn.descr }} • route {{ ipInfo.asn.route }}
-              </span>
-            </dd>
-            <dd class="text-[0.7rem] text-slate-500">
-              Abuse score (network/company):
+            <dd v-if="ipInfo?.asn || ipInfo?.company" class="text-[0.7rem] text-slate-500">
+              Abuse scores (ASN / company):
               <span class="font-medium text-slate-300">
                 {{ formatAbuserScore(ipInfo?.asn?.abuser_score) }} /
                 {{ formatAbuserScore(ipInfo?.company?.abuser_score) }}
+              </span>
+            </dd>
+          </div>
+
+          <div
+            v-if="ipInfo?.datacenter || ipInfo?.company || ipInfo?.asn"
+            class="flex flex-col gap-2 rounded-lg bg-slate-950/60 px-3 py-2"
+          >
+            <dt class="text-[0.7rem] font-medium text-slate-300">Provider, ASN & datacenter</dt>
+            <dd v-if="ipInfo?.company" class="mt-0.5 text-[0.72rem] text-slate-400">
+              {{ ipInfo.company.name || 'Unknown provider' }}
+              <span v-if="ipInfo.company.type">
+                ({{ ipInfo.company.type }})
+              </span>
+              <span v-if="ipInfo.company.domain" class="text-slate-500">
+                • {{ ipInfo.company.domain }}
+              </span>
+            </dd>
+            <dd v-if="ipInfo?.datacenter" class="text-[0.7rem] text-slate-500">
+              Datacenter:
+              <span class="font-medium text-slate-300">
+                {{ ipInfo.datacenter.datacenter || 'Unknown' }}
+              </span>
+              <span v-if="ipInfo.datacenter.city">
+                • {{ ipInfo.datacenter.city }}
+              </span>
+              <span v-if="ipInfo.datacenter.country">
+                , {{ ipInfo.datacenter.country }}
+              </span>
+              <span v-if="ipInfo.datacenter.network">
+                • {{ ipInfo.datacenter.network }}
+              </span>
+            </dd>
+            <dd v-if="ipInfo?.asn" class="text-[0.7rem] text-slate-500">
+              <span>
+                ASN {{ ipInfo.asn.asn ?? 'unknown' }} •
+              </span>
+              <span v-if="ipInfo.asn.descr">
+                {{ ipInfo.asn.descr }}
+              </span>
+              <span v-if="ipInfo.asn.route">
+                • {{ ipInfo.asn.route }}
+              </span>
+            </dd>
+          </div>
+
+          <div
+            v-if="ipInfo?.abuse || ipInfo?.location"
+            class="flex flex-col gap-2 rounded-lg bg-slate-950/60 px-3 py-2"
+          >
+            <dt class="text-[0.7rem] font-medium text-slate-300">Abuse contact & location</dt>
+            <dd v-if="ipInfo?.abuse" class="mt-0.5 text-[0.72rem] text-slate-400">
+              <span class="font-medium">
+                {{ ipInfo.abuse.name || 'Abuse contact' }}
+              </span>
+              <span v-if="ipInfo.abuse.email">
+                • {{ ipInfo.abuse.email }}
+              </span>
+              <span v-if="ipInfo.abuse.phone">
+                • {{ ipInfo.abuse.phone }}
+              </span>
+              <span v-if="ipInfo.abuse.address" class="block text-slate-500">
+                {{ ipInfo.abuse.address }}
+              </span>
+            </dd>
+            <dd v-if="ipInfo?.location" class="text-[0.7rem] text-slate-500">
+              <span>
+                {{ ipInfo.location.city || 'Unknown city' }},
+                {{ ipInfo.location.state || 'Unknown region' }},
+                {{ ipInfo.location.country || 'Unknown country' }}
+              </span>
+              <span v-if="ipInfo.location.zip">
+                • {{ ipInfo.location.zip }}
+              </span>
+              <span v-if="ipInfo.location.timezone" class="block">
+                Timezone: {{ ipInfo.location.timezone }}
+              </span>
+            </dd>
+            <dd v-if="ipInfo?.elapsed_ms != null" class="text-[0.7rem] text-slate-500">
+              Lookup latency:
+              <span class="font-medium text-slate-300">
+                {{ ipInfo.elapsed_ms }} ms
               </span>
             </dd>
           </div>

@@ -8,16 +8,8 @@
           </h1>
           <p class="mt-1 max-w-xl text-sm text-slate-400">
             A compact, mobile-friendly view of your IP address, browser, device, and connection
-            details &mdash; inspired by
-            <a
-              href="https://www.deviceinfo.me/"
-              target="_blank"
-              rel="noreferrer"
-              class="font-medium text-sky-400 underline-offset-4 hover:underline"
-            >
-              deviceinfo.me
-            </a>
-            .
+            details made by me for me.
+            
           </p>
         </div>
         <div class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1 text-xs text-slate-300 shadow-soft backdrop-blur">
