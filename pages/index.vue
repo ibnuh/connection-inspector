@@ -131,6 +131,9 @@ const permissionClipboardRead = ref<string | null>(null)
 // UI toggles
 const showRawIpPayload = ref(false)
 
+// Export / share state
+const copySummaryStatus = ref<'idle' | 'copied' | 'error'>('idle')
+
 const jsEnabled = computed(() => true)
 
 const ipStatusLabel = computed(() => {
@@ -231,6 +234,92 @@ async function fetchIpInfo() {
     ipError.value = `Unable to fetch IP information: ${message}`
   } finally {
     loadingIp.value = false
+  }
+}
+
+async function copySummaryToClipboard() {
+  copySummaryStatus.value = 'idle'
+  const summary = {
+    ip: ipInfo.value,
+    browser: {
+      userAgent: userAgent.value,
+      platform: platform.value,
+      languages: languages.value,
+      online: online.value,
+      doNotTrack: doNotTrack.value,
+      cookiesEnabled: cookiesEnabled.value,
+      timezone: timezone.value
+    },
+    screen: {
+      width: screenWidth.value,
+      height: screenHeight.value,
+      devicePixelRatio: devicePixelRatio.value,
+      colorDepth: colorDepth.value,
+      hardwareConcurrency: hardwareConcurrency.value,
+      maxTouchPoints: maxTouchPoints.value
+    },
+    connection: {
+      type: connectionType.value,
+      downlink: connectionDownlink.value,
+      rtt: connectionRtt.value,
+      saveData: connectionSaveData.value
+    },
+    storage: {
+      localStorageEnabled: localStorageEnabled.value,
+      quota: storageQuota.value,
+      usage: storageUsage.value
+    },
+    features: {
+      serviceWorker: supportsServiceWorker.value,
+      notifications: supportsNotifications.value,
+      clipboard: supportsClipboard.value,
+      geolocation: supportsGeolocation.value,
+      webRTC: supportsWebRTC.value,
+      webGL: supportsWebGL.value,
+      webGPU: supportsWebGPU.value,
+      indexedDB: supportsIndexedDB.value
+    },
+    permissions: {
+      geolocation: permissionGeolocation.value,
+      notifications: permissionNotifications.value,
+      camera: permissionCamera.value,
+      microphone: permissionMicrophone.value,
+      clipboardRead: permissionClipboardRead.value
+    },
+    risk: {
+      score: ipRiskScore.value,
+      band: ipRiskBand.value
+    }
+  }
+
+  const text = JSON.stringify(summary, null, 2)
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      copySummaryStatus.value = 'copied'
+      setTimeout(() => {
+        copySummaryStatus.value = 'idle'
+      }, 2000)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      copySummaryStatus.value = 'copied'
+      setTimeout(() => {
+        copySummaryStatus.value = 'idle'
+      }, 2000)
+    }
+  } catch {
+    copySummaryStatus.value = 'error'
+    setTimeout(() => {
+      copySummaryStatus.value = 'idle'
+    }, 3000)
   }
 }
 
