@@ -139,6 +139,19 @@ const showRawIpPayload = ref(false)
 const copySummaryStatus = ref<'idle' | 'copied' | 'error'>('idle')
 const copyDebugStatus = ref<'idle' | 'copied' | 'error'>('idle')
 
+// Server-view comparison
+const serverViewLoading = ref(false)
+const serverViewError = ref<string | null>(null)
+const serverViewData = ref<{
+  ip: string | null
+  httpVersion?: string
+  headers?: {
+    'user-agent'?: string
+    'accept-language'?: string
+    'x-forwarded-for'?: string | string[]
+  }
+} | null>(null)
+
 // Privacy / fingerprint hints
 const privacyNotes = computed(() => {
   const notes: string[] = []
@@ -184,6 +197,40 @@ const fingerprintBand = computed<'Low' | 'Medium' | 'High' | 'Unknown'>(() => {
   if (s < 70) return 'Medium'
   return 'High'
 })
+
+const clockSkewMinutes = computed<number | null>(() => {
+  const remote = ipInfo.value?.location?.local_time
+  if (!remote) return null
+  const remoteDate = new Date(remote)
+  if (Number.isNaN(remoteDate.getTime())) return null
+  const localDate = new Date()
+  const diffMs = localDate.getTime() - remoteDate.getTime()
+  return Math.round(diffMs / 60000)
+})
+
+const isHttps = computed(() => typeof window !== 'undefined' && window.location.protocol === 'https:')
+
+async function runServerViewCheck() {
+  serverViewError.value = null
+  serverViewData.value = null
+  serverViewLoading.value = true
+  try {
+    const res = await $fetch<{
+      ip: string | null
+      httpVersion?: string
+      headers?: {
+        'user-agent'?: string
+        'accept-language'?: string
+        'x-forwarded-for'?: string | string[]
+      }
+    }>('/api/server-info')
+    serverViewData.value = res
+  } catch (err) {
+    serverViewError.value = (err as Error).message || 'Server view check failed.'
+  } finally {
+    serverViewLoading.value = false
+  }
+}
 
 // GPU / WebGL renderer info
 const gpuRenderer = ref<string | null>(null)
@@ -857,6 +904,12 @@ onMounted(() => {
           >
             Mobile network
           </span>
+          <span
+            v-if="!isHttps"
+            class="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-1 text-[0.7rem] font-medium text-amber-300 ring-1 ring-amber-500/40"
+          >
+            Not using HTTPS
+          </span>
         </div>
 
         <div class="mt-3 space-y-1.5 rounded-xl border border-slate-800/80 bg-slate-950/60 p-3">
@@ -1006,27 +1059,33 @@ onMounted(() => {
                 />
                 <span>IndexedDB</span>
               </li>
-            <li v-if="onlineEvents.length" class="col-span-2 mt-1 text-[0.7rem] text-slate-400">
-              <span class="mr-1 font-medium text-slate-200">
-                Session connectivity:
-              </span>
-              <span
-                v-for="(evt, idx) in onlineEvents.slice(-4)"
-                :key="`${evt.at}-${idx}`"
-                class="inline-flex items-center gap-1 text-[0.7rem]"
+              <li
+                v-if="onlineEvents.length"
+                class="col-span-2 mt-1 text-[0.7rem] text-slate-400"
               >
+                <span class="mr-1 font-medium text-slate-200">
+                  Session connectivity:
+                </span>
                 <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  :class="evt.online ? 'bg-emerald-400' : 'bg-rose-400'"
-                />
-                <span class="text-slate-400">
-                  {{ evt.online ? 'online' : 'offline' }} at {{ evt.at }}
+                  v-for="(evt, idx) in onlineEvents.slice(-4)"
+                  :key="`${evt.at}-${idx}`"
+                  class="inline-flex items-center gap-1 text-[0.7rem]"
+                >
+                  <span
+                    class="h-1.5 w-1.5 rounded-full"
+                    :class="evt.online ? 'bg-emerald-400' : 'bg-rose-400'"
+                  />
+                  <span class="text-slate-400">
+                    {{ evt.online ? 'online' : 'offline' }} at {{ evt.at }}
+                  </span>
+                  <span
+                    v-if="idx < onlineEvents.slice(-4).length - 1"
+                    class="mx-1 text-slate-700"
+                  >
+                    •
+                  </span>
                 </span>
-                <span v-if="idx < onlineEvents.slice(-4).length - 1" class="mx-1 text-slate-700">
-                  •
-                </span>
-              </span>
-            </li>
+              </li>
             </ul>
           </div>
 
@@ -1135,6 +1194,87 @@ onMounted(() => {
                   <span class="text-slate-300">{{ val }}</span>
                   <span v-if="idx < Object.keys(permissionLastChecked).length - 1">•</span>
                 </span>
+              </p>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-800 pt-2">
+            <p class="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Browser vs server view
+            </p>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="text-[0.7rem] text-slate-400">
+                Check what the server sees for your IP and user agent, and compare with the browser.
+              </p>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[0.7rem] font-medium text-slate-100 hover:border-slate-500 hover:bg-slate-800 active:bg-slate-700"
+                :disabled="serverViewLoading"
+                @click="runServerViewCheck"
+              >
+                <span
+                  v-if="serverViewLoading"
+                  class="h-1.5 w-1.5 animate-ping rounded-full bg-sky-400"
+                />
+                <span>{{ serverViewLoading ? 'Checking…' : 'Run check' }}</span>
+              </button>
+            </div>
+            <p
+              v-if="serverViewError"
+              class="mt-1 text-[0.7rem] text-rose-400"
+            >
+              {{ serverViewError }}
+            </p>
+            <div
+              v-if="serverViewData"
+              class="mt-1 space-y-0.5 text-[0.7rem]"
+            >
+              <p class="text-slate-300">
+                Server IP:
+                <span class="font-medium">
+                  {{ serverViewData.ip || 'Unknown' }}
+                </span>
+                <span v-if="ipInfo?.ip">
+                  &mdash; browser IP:
+                  <span class="font-medium">
+                    {{ ipInfo.ip }}
+                  </span>
+                  <span
+                    v-if="serverViewData.ip && ipInfo.ip && serverViewData.ip === ipInfo.ip"
+                    class="ml-1 text-emerald-400"
+                  >
+                    (match)
+                  </span>
+                  <span
+                    v-else-if="serverViewData.ip && ipInfo.ip"
+                    class="ml-1 text-amber-300"
+                  >
+                    (mismatch &mdash; proxy or VPN likely)
+                  </span>
+                </span>
+              </p>
+              <p class="text-slate-400">
+                HTTP:
+                <span class="font-medium text-slate-200">
+                  {{ serverViewData.httpVersion || 'Unknown' }}
+                </span>
+                • HTTPS:
+                <span class="font-medium text-slate-200">
+                  {{ isHttps ? 'yes' : 'no or unknown' }}
+                </span>
+              </p>
+              <p class="text-slate-400">
+                User-Agent header:
+                <span class="font-medium text-slate-200">
+                  {{ serverViewData.headers?.['user-agent'] || 'Unknown' }}
+                </span>
+              </p>
+              <p
+                v-if="userAgent && serverViewData.headers?.['user-agent']"
+                class="text-[0.65rem]"
+                :class="serverViewData.headers['user-agent'] === userAgent ? 'text-emerald-400' : 'text-amber-300'"
+              >
+                {{ serverViewData.headers['user-agent'] === userAgent ? 'Server UA matches navigator.userAgent.' : 'Server UA differs from navigator.userAgent (proxy, sanitizer or middleware may be rewriting headers).' }}
               </p>
             </div>
           </div>
