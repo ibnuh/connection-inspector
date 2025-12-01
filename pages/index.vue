@@ -101,6 +101,12 @@ const colorDepth = ref<number | null>(null)
 const hardwareConcurrency = ref<number | null>(null)
 const maxTouchPoints = ref<number | null>(null)
 
+// Network Information API (best-effort, not available in all browsers)
+const connectionType = ref<string | null>(null)
+const connectionDownlink = ref<number | null>(null)
+const connectionRtt = ref<number | null>(null)
+const connectionSaveData = ref<boolean | null>(null)
+
 const jsEnabled = computed(() => true)
 
 const ipStatusLabel = computed(() => {
@@ -193,6 +199,39 @@ onMounted(() => {
   hardwareConcurrency.value = (navigator as Navigator & { hardwareConcurrency?: number })
     .hardwareConcurrency ?? null
   maxTouchPoints.value = (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints ?? null
+
+  // Network Information API (if supported)
+  type AnyConnection = {
+    effectiveType?: string
+    downlink?: number
+    rtt?: number
+    saveData?: boolean
+    addEventListener?: (type: string, listener: () => void) => void
+  }
+
+  const navWithConnection = navigator as Navigator & {
+    connection?: AnyConnection
+    mozConnection?: AnyConnection
+    webkitConnection?: AnyConnection
+  }
+
+  const connection: AnyConnection | undefined =
+    navWithConnection.connection ||
+    navWithConnection.mozConnection ||
+    navWithConnection.webkitConnection
+
+  const applyConnection = () => {
+    if (!connection) return
+    connectionType.value = connection.effectiveType ?? null
+    connectionDownlink.value = connection.downlink ?? null
+    connectionRtt.value = connection.rtt ?? null
+    connectionSaveData.value = connection.saveData ?? null
+  }
+
+  applyConnection()
+  if (connection?.addEventListener) {
+    connection.addEventListener('change', applyConnection)
+  }
 
   fetchIpInfo()
 })
@@ -391,6 +430,35 @@ onMounted(() => {
                 </span>
               </div>
             </div>
+          </div>
+
+          <div
+            v-if="connectionType || connectionDownlink || connectionRtt || connectionSaveData !== null"
+            class="flex flex-col gap-1 rounded-lg bg-slate-950/60 px-3 py-2"
+          >
+            <dt class="text-[0.7rem] font-medium text-slate-300">Browser connection</dt>
+            <dd class="mt-0.5 text-[0.72rem] text-slate-400">
+              <span v-if="connectionType">
+                Effective type:
+                <span class="font-medium text-slate-200">
+                  {{ connectionType }}
+                </span>
+              </span>
+              <span v-else>
+                Network Information API not reported by this browser.
+              </span>
+            </dd>
+            <dd class="text-[0.7rem] text-slate-500">
+              <span v-if="connectionDownlink != null">
+                Downlink: {{ connectionDownlink }} Mbps
+              </span>
+              <span v-if="connectionRtt != null">
+                • RTT: {{ connectionRtt }} ms
+              </span>
+              <span v-if="connectionSaveData != null" class="block">
+                Data saver: {{ connectionSaveData ? 'Enabled' : 'Disabled' }}
+              </span>
+            </dd>
           </div>
 
           <div class="flex flex-col gap-2 rounded-lg bg-slate-950/60 px-3 py-2">
