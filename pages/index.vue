@@ -107,6 +107,16 @@ const connectionDownlink = ref<number | null>(null)
 const connectionRtt = ref<number | null>(null)
 const connectionSaveData = ref<boolean | null>(null)
 
+// Feature / API support matrix
+const supportsServiceWorker = ref<boolean | null>(null)
+const supportsNotifications = ref<boolean | null>(null)
+const supportsClipboard = ref<boolean | null>(null)
+const supportsGeolocation = ref<boolean | null>(null)
+const supportsWebRTC = ref<boolean | null>(null)
+const supportsWebGL = ref<boolean | null>(null)
+const supportsWebGPU = ref<boolean | null>(null)
+const supportsIndexedDB = ref<boolean | null>(null)
+
 const jsEnabled = computed(() => true)
 
 const ipStatusLabel = computed(() => {
@@ -233,6 +243,26 @@ onMounted(() => {
     connection.addEventListener('change', applyConnection)
   }
 
+  // Feature / API support
+  supportsServiceWorker.value = 'serviceWorker' in navigator
+  supportsNotifications.value = 'Notification' in window
+  supportsClipboard.value = !!navigator.clipboard
+  supportsGeolocation.value = 'geolocation' in navigator
+  supportsWebRTC.value = 'RTCPeerConnection' in window || 'mozRTCPeerConnection' in window || 'webkitRTCPeerConnection' in window
+  supportsWebGL.value = (() => {
+    try {
+      const canvas = document.createElement('canvas')
+      const gl =
+        canvas.getContext('webgl') ||
+        canvas.getContext('experimental-webgl')
+      return !!gl
+    } catch {
+      return false
+    }
+  })()
+  supportsWebGPU.value = 'gpu' in navigator
+  supportsIndexedDB.value = 'indexedDB' in window
+
   fetchIpInfo()
 })
 </script>
@@ -322,44 +352,110 @@ onMounted(() => {
             {{ userAgent || 'Detecting browser…' }}
           </p>
         </div>
-        <dl class="grid grid-cols-2 gap-3 text-xs text-slate-300 sm:grid-cols-3">
-          <div>
-            <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">JS</dt>
-            <dd class="mt-0.5 font-medium text-emerald-300">
-              Enabled
-            </dd>
+        <div class="space-y-3 text-xs text-slate-300">
+          <dl class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div>
+              <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">JS</dt>
+              <dd class="mt-0.5 font-medium text-emerald-300">
+                Enabled
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">Cookies</dt>
+              <dd class="mt-0.5 font-medium" :class="cookiesEnabled ? 'text-emerald-300' : 'text-rose-300'">
+                {{ cookiesEnabled == null ? 'Unknown' : cookiesEnabled ? 'Enabled' : 'Disabled' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">Online</dt>
+              <dd class="mt-0.5 font-medium" :class="online ? 'text-emerald-300' : 'text-rose-300'">
+                {{ online == null ? 'Unknown' : online ? 'Yes' : 'No' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">Timezone</dt>
+              <dd class="mt-0.5 font-medium">
+                {{ timezone || 'Unknown' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">Language</dt>
+              <dd class="mt-0.5 font-medium">
+                {{ languages.join(', ') || 'Unknown' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">DNT</dt>
+              <dd class="mt-0.5 font-medium">
+                {{ doNotTrack ?? 'Not reported' }}
+              </dd>
+            </div>
+          </dl>
+
+          <div class="border-t border-slate-800 pt-2">
+            <p class="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Feature support
+            </p>
+            <ul class="grid grid-cols-2 gap-2 text-[0.7rem] sm:grid-cols-3">
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="supportsServiceWorker ? 'bg-emerald-400' : 'bg-slate-600'"
+                />
+                <span>Service Worker</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="supportsNotifications ? 'bg-emerald-400' : 'bg-slate-600'"
+                />
+                <span>Notifications</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="supportsClipboard ? 'bg-emerald-400' : 'bg-slate-600'"
+                />
+                <span>Clipboard API</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="supportsGeolocation ? 'bg-emerald-400' : 'bg-slate-600'"
+                />
+                <span>Geolocation</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="supportsWebRTC ? 'bg-emerald-400' : 'bg-slate-600'"
+                />
+                <span>WebRTC</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="supportsWebGL ? 'bg-emerald-400' : 'bg-slate-600'"
+                />
+                <span>WebGL</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="supportsWebGPU ? 'bg-emerald-400' : 'bg-slate-600'"
+                />
+                <span>WebGPU</span>
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="supportsIndexedDB ? 'bg-emerald-400' : 'bg-slate-600'"
+                />
+                <span>IndexedDB</span>
+              </li>
+            </ul>
           </div>
-          <div>
-            <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">Cookies</dt>
-            <dd class="mt-0.5 font-medium" :class="cookiesEnabled ? 'text-emerald-300' : 'text-rose-300'">
-              {{ cookiesEnabled == null ? 'Unknown' : cookiesEnabled ? 'Enabled' : 'Disabled' }}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">Online</dt>
-            <dd class="mt-0.5 font-medium" :class="online ? 'text-emerald-300' : 'text-rose-300'">
-              {{ online == null ? 'Unknown' : online ? 'Yes' : 'No' }}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">Timezone</dt>
-            <dd class="mt-0.5 font-medium">
-              {{ timezone || 'Unknown' }}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">Language</dt>
-            <dd class="mt-0.5 font-medium">
-              {{ languages.join(', ') || 'Unknown' }}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[0.68rem] uppercase tracking-[0.16em] text-slate-500">DNT</dt>
-            <dd class="mt-0.5 font-medium">
-              {{ doNotTrack ?? 'Not reported' }}
-            </dd>
-          </div>
-        </dl>
+        </div>
       </div>
     </section>
 
