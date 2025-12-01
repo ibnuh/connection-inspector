@@ -78,11 +78,13 @@ type IpApiResponse = {
   asn?: AsnInfo
   location?: LocationInfo
   elapsed_ms?: number
+  client_rtt_ms?: number
 }
 
 const ipInfo = ref<IpApiResponse | null>(null)
 const ipError = ref<string | null>(null)
 const loadingIp = ref(true)
+const lastIp = ref<string | null>(null)
 
 const userAgent = ref<string | null>(null)
 const platform = ref<string | null>(null)
@@ -248,12 +250,27 @@ async function fetchIpInfo() {
   loadingIp.value = true
   ipError.value = null
   try {
+    const start = performance.now()
     const res = await fetch('https://api.ipapi.is/')
     if (!res.ok) {
       throw new Error(`Request failed with status ${res.status}`)
     }
     const data = (await res.json()) as IpApiResponse
     ipInfo.value = data
+    const end = performance.now()
+
+    if (ipInfo.value?.ip && lastIp.value && lastIp.value !== ipInfo.value.ip) {
+      onlineEvents.value.push({
+        at: new Date().toLocaleTimeString(),
+        online: !!online.value
+      })
+    }
+
+    lastIp.value = ipInfo.value?.ip ?? lastIp.value
+
+    if (ipInfo.value) {
+      ;(ipInfo.value as IpApiResponse & { client_rtt_ms?: number }).client_rtt_ms = Math.round(end - start)
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     ipError.value = `Unable to fetch IP information: ${message}`
@@ -1059,6 +1076,12 @@ onMounted(() => {
               Lookup latency:
               <span class="font-medium text-slate-300">
                 {{ ipInfo.elapsed_ms }} ms
+              </span>
+              <span v-if="ipInfo.client_rtt_ms != null">
+                • client RTT:
+                <span class="font-medium text-slate-300">
+                  {{ ipInfo.client_rtt_ms }} ms
+                </span>
               </span>
             </dd>
           </div>
