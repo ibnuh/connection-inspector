@@ -9,7 +9,6 @@
           <p class="mt-1 max-w-xl text-sm text-slate-400">
             A compact, mobile-friendly view of your IP address, browser, device, and connection
             details made by me for me.
-            
           </p>
         </div>
         <div class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1 text-xs text-slate-300 shadow-soft backdrop-blur">
@@ -21,6 +20,12 @@
       <main>
         <NuxtPage />
       </main>
+      <footer class="mt-4 border-t border-slate-900 pt-3 text-xs text-slate-600">
+        <p>
+          Built with Nuxt 3, Vue 3 and Tailwind. Snapshot generated at runtime in your browser; no data is
+          stored on the server.
+        </p>
+      </footer>
     </div>
   </div>
 </template>

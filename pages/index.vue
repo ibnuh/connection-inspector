@@ -161,6 +161,35 @@ const gpuVendor = ref<string | null>(null)
 // Connection / session history
 const onlineEvents = ref<{ at: string; online: boolean }[]>([])
 
+// Developer diagnostics
+function logDiagnosticsToConsole() {
+  // Intentionally verbose: this is for developers using the browser console.
+  // eslint-disable-next-line no-console
+  console.log('[Connection Inspector] snapshot', {
+    ip: ipInfo.value,
+    browser: {
+      userAgent: userAgent.value,
+      platform: platform.value,
+      languages: languages.value
+    },
+    screen: {
+      width: screenWidth.value,
+      height: screenHeight.value,
+      devicePixelRatio: devicePixelRatio.value
+    },
+    connection: {
+      type: connectionType.value,
+      downlink: connectionDownlink.value,
+      rtt: connectionRtt.value,
+      saveData: connectionSaveData.value
+    },
+    risk: {
+      score: ipRiskScore.value,
+      band: ipRiskBand.value
+    }
+  })
+}
+
 const jsEnabled = computed(() => true)
 
 const ipStatusLabel = computed(() => {
@@ -331,6 +360,9 @@ async function copySummaryToClipboard() {
     risk: {
       score: ipRiskScore.value,
       band: ipRiskBand.value
+    },
+    meta: {
+      generatedAt: new Date().toISOString()
     }
   }
 
@@ -1266,6 +1298,14 @@ onMounted(() => {
             </p>
           </div>
         </div>
+        <button
+          type="button"
+          class="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/80 px-3 py-1 text-[0.7rem] font-medium text-slate-200 hover:border-slate-600 hover:bg-slate-900 active:bg-slate-800"
+          @click="logDiagnosticsToConsole"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-slate-500" />
+          Log diagnostics to console
+        </button>
       </div>
     </section>
   </div>
