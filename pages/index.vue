@@ -152,6 +152,11 @@ const serverViewData = ref<{
   }
 } | null>(null)
 
+// Reverse DNS
+const reverseDnsLoading = ref(false)
+const reverseDnsError = ref<string | null>(null)
+const reverseDnsHostnames = ref<string[] | null>(null)
+
 // Privacy / fingerprint hints
 const privacyNotes = computed(() => {
   const notes: string[] = []
@@ -549,6 +554,33 @@ async function copyDebugSnippet() {
     setTimeout(() => {
       copyDebugStatus.value = 'idle'
     }, 3000)
+  }
+}
+
+async function runReverseDnsLookup() {
+  reverseDnsError.value = null
+  reverseDnsHostnames.value = null
+  reverseDnsLoading.value = true
+  try {
+    const res = await $fetch<{
+      ok: boolean
+      ip: string | null
+      hostnames?: string[]
+      error?: string
+    }>('/api/reverse-dns', {
+      params: ipInfo.value?.ip ? { ip: ipInfo.value.ip } : undefined
+    })
+
+    if (!res.ok) {
+      reverseDnsError.value = res.error || 'Reverse DNS lookup failed.'
+      return
+    }
+
+    reverseDnsHostnames.value = res.hostnames ?? []
+  } catch (err) {
+    reverseDnsError.value = (err as Error).message || 'Reverse DNS lookup failed.'
+  } finally {
+    reverseDnsLoading.value = false
   }
 }
 
@@ -1566,6 +1598,41 @@ onMounted(() => {
                 <span class="font-medium text-slate-300">
                   {{ ipInfo.client_rtt_ms }} ms
                 </span>
+              </span>
+            </dd>
+          </div>
+
+          <div class="flex flex-col gap-1 rounded-lg bg-slate-950/60 px-3 py-2">
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-[0.7rem] font-medium text-slate-300">Reverse DNS (PTR)</dt>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[0.7rem] font-medium text-slate-100 hover:border-slate-500 hover:bg-slate-800 active:bg-slate-700"
+                :disabled="reverseDnsLoading"
+                @click="runReverseDnsLookup"
+              >
+                <span
+                  v-if="reverseDnsLoading"
+                  class="h-1.5 w-1.5 animate-ping rounded-full bg-sky-400"
+                />
+                <span>{{ reverseDnsLoading ? 'Checking…' : 'Check DNS' }}</span>
+              </button>
+            </div>
+            <dd class="mt-0.5 text-[0.72rem] text-slate-400">
+              <span v-if="reverseDnsError">
+                {{ reverseDnsError }}
+              </span>
+              <span v-else-if="reverseDnsHostnames && reverseDnsHostnames.length === 0">
+                No reverse DNS records found for this IP.
+              </span>
+              <span v-else-if="reverseDnsHostnames && reverseDnsHostnames.length">
+                Hostnames:
+                <span class="font-medium text-slate-200">
+                  {{ reverseDnsHostnames.join(', ') }}
+                </span>
+              </span>
+              <span v-else>
+                Run a lookup to see PTR records (if any) for your current IP.
               </span>
             </dd>
           </div>
