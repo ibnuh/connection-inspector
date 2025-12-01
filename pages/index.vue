@@ -130,6 +130,8 @@ const permissionCamera = ref<string | null>(null)
 const permissionMicrophone = ref<string | null>(null)
 const permissionClipboardRead = ref<string | null>(null)
 
+const permissionLastChecked = ref<Record<string, string>>({})
+
 // UI toggles
 const showRawIpPayload = ref(false)
 
@@ -394,6 +396,83 @@ async function copySummaryToClipboard() {
     setTimeout(() => {
       copySummaryStatus.value = 'idle'
     }, 3000)
+  }
+}
+
+function markPermissionChecked(name: string, state: string | null) {
+  if (!state) return
+  permissionLastChecked.value = {
+    ...permissionLastChecked.value,
+    [name]: `${state} @ ${new Date().toLocaleTimeString()}`
+  }
+}
+
+async function requestGeolocationPermission() {
+  if (!navigator.geolocation) return
+  try {
+    await new Promise<void>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        () => resolve(),
+        (err) => reject(err),
+        { maximumAge: 0, timeout: 10000 }
+      )
+    })
+    permissionGeolocation.value = 'granted'
+  } catch {
+    permissionGeolocation.value = 'denied'
+  } finally {
+    markPermissionChecked('geolocation', permissionGeolocation.value)
+  }
+}
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return
+  try {
+    const result = await Notification.requestPermission()
+    permissionNotifications.value = result
+  } catch {
+    permissionNotifications.value = 'denied'
+  } finally {
+    markPermissionChecked('notifications', permissionNotifications.value)
+  }
+}
+
+async function requestCameraPermission() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+    stream.getTracks().forEach((t) => t.stop())
+    permissionCamera.value = 'granted'
+  } catch {
+    permissionCamera.value = 'denied'
+  } finally {
+    markPermissionChecked('camera', permissionCamera.value)
+  }
+}
+
+async function requestMicrophonePermission() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    stream.getTracks().forEach((t) => t.stop())
+    permissionMicrophone.value = 'granted'
+  } catch {
+    permissionMicrophone.value = 'denied'
+  } finally {
+    markPermissionChecked('microphone', permissionMicrophone.value)
+  }
+}
+
+async function requestClipboardReadPermission() {
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      await navigator.clipboard.readText()
+      permissionClipboardRead.value = 'granted'
+    } else {
+      permissionClipboardRead.value = 'unavailable'
+    }
+  } catch {
+    permissionClipboardRead.value = 'denied'
+  } finally {
+    markPermissionChecked('clipboard-read', permissionClipboardRead.value)
   }
 }
 
@@ -833,46 +912,109 @@ onMounted(() => {
             <p class="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
               Permissions (browser view)
             </p>
-            <ul class="grid grid-cols-2 gap-2 text-[0.7rem] sm:grid-cols-3">
-              <li class="flex items-center gap-1.5">
+            <div class="space-y-1.5 text-[0.7rem]">
+              <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="h-1.5 w-1.5 rounded-full"
+                      :class="permissionGeolocation === 'granted' ? 'bg-emerald-400' : permissionGeolocation === 'denied' ? 'bg-rose-400' : permissionGeolocation === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                    />
+                    <span>Geolocation: {{ permissionGeolocation ?? 'unknown' }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[0.65rem] text-slate-200 hover:border-slate-500"
+                    @click="requestGeolocationPermission"
+                  >
+                    Check
+                  </button>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="h-1.5 w-1.5 rounded-full"
+                      :class="permissionNotifications === 'granted' ? 'bg-emerald-400' : permissionNotifications === 'denied' ? 'bg-rose-400' : permissionNotifications === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                    />
+                    <span>Notifications: {{ permissionNotifications ?? 'unknown' }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[0.65rem] text-slate-200 hover:border-slate-500"
+                    @click="requestNotificationPermission"
+                  >
+                    Check
+                  </button>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="h-1.5 w-1.5 rounded-full"
+                      :class="permissionCamera === 'granted' ? 'bg-emerald-400' : permissionCamera === 'denied' ? 'bg-rose-400' : permissionCamera === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                    />
+                    <span>Camera: {{ permissionCamera ?? 'unknown' }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[0.65rem] text-slate-200 hover:border-slate-500"
+                    @click="requestCameraPermission"
+                  >
+                    Check
+                  </button>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="h-1.5 w-1.5 rounded-full"
+                      :class="permissionMicrophone === 'granted' ? 'bg-emerald-400' : permissionMicrophone === 'denied' ? 'bg-rose-400' : permissionMicrophone === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                    />
+                    <span>Microphone: {{ permissionMicrophone ?? 'unknown' }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[0.65rem] text-slate-200 hover:border-slate-500"
+                    @click="requestMicrophonePermission"
+                  >
+                    Check
+                  </button>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="h-1.5 w-1.5 rounded-full"
+                      :class="permissionClipboardRead === 'granted' ? 'bg-emerald-400' : permissionClipboardRead === 'denied' ? 'bg-rose-400' : permissionClipboardRead === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
+                    />
+                    <span>Clipboard read: {{ permissionClipboardRead ?? 'unknown' }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[0.65rem] text-slate-200 hover:border-slate-500"
+                    @click="requestClipboardReadPermission"
+                  >
+                    Check
+                  </button>
+                </div>
+              </div>
+              <p class="mt-1 text-[0.65rem] text-slate-500">
+                This table reflects the browser&rsquo;s current understanding of permission state. Use
+                &ldquo;Check&rdquo; to actively prompt for a permission and refresh the status.
+              </p>
+              <p
+                v-if="Object.keys(permissionLastChecked).length"
+                class="text-[0.65rem] text-slate-500"
+              >
+                Last checked:
                 <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  :class="permissionGeolocation === 'granted' ? 'bg-emerald-400' : permissionGeolocation === 'denied' ? 'bg-rose-400' : permissionGeolocation === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
-                />
-                <span>Geolocation: {{ permissionGeolocation ?? 'unknown' }}</span>
-              </li>
-              <li class="flex items-center gap-1.5">
-                <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  :class="permissionNotifications === 'granted' ? 'bg-emerald-400' : permissionNotifications === 'denied' ? 'bg-rose-400' : permissionNotifications === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
-                />
-                <span>Notifications: {{ permissionNotifications ?? 'unknown' }}</span>
-              </li>
-              <li class="flex items-center gap-1.5">
-                <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  :class="permissionCamera === 'granted' ? 'bg-emerald-400' : permissionCamera === 'denied' ? 'bg-rose-400' : permissionCamera === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
-                />
-                <span>Camera: {{ permissionCamera ?? 'unknown' }}</span>
-              </li>
-              <li class="flex items-center gap-1.5">
-                <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  :class="permissionMicrophone === 'granted' ? 'bg-emerald-400' : permissionMicrophone === 'denied' ? 'bg-rose-400' : permissionMicrophone === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
-                />
-                <span>Microphone: {{ permissionMicrophone ?? 'unknown' }}</span>
-              </li>
-              <li class="flex items-center gap-1.5">
-                <span
-                  class="h-1.5 w-1.5 rounded-full"
-                  :class="permissionClipboardRead === 'granted' ? 'bg-emerald-400' : permissionClipboardRead === 'denied' ? 'bg-rose-400' : permissionClipboardRead === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
-                />
-                <span>Clipboard read: {{ permissionClipboardRead ?? 'unknown' }}</span>
-              </li>
-            </ul>
-            <p class="mt-1 text-[0.65rem] text-slate-500">
-              This table reflects the browser&rsquo;s current understanding of permission state for this origin and may not be available in all browsers.
-            </p>
+                  v-for="(val, key, idx) in permissionLastChecked"
+                  :key="key"
+                  class="mr-1"
+                >
+                  <span class="text-slate-400">{{ key }}:</span>
+                  <span class="text-slate-300">{{ val }}</span>
+                  <span v-if="idx < Object.keys(permissionLastChecked).length - 1">•</span>
+                </span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
