@@ -79,20 +79,29 @@ type IpApiResponse = {
   client_rtt_ms?: number
 }
 
-interface DnsQueryResult {
+interface DnsServerInfo {
+  ip_address: string
+  hostname: string | null
+  isp: string
+  organization: string
+  country: string
+  country_code: string
+  city: string
+  dnssec: boolean
+}
+
+interface DnsQueryProgress {
+  guid: string
   domain: string
-  ip: string | null
+  status: 'pending' | 'loading' | 'completed' | 'error'
   error?: string
 }
 
 interface DnsLeakResult {
-  ok: boolean
-  queries: DnsQueryResult[]
-  systemDnsServers: string[]
+  servers: DnsServerInfo[]
+  uniqueServers: DnsServerInfo[]
   leakDetected: boolean
   resolverCount: number
-  note?: string
-  error?: string
 }
 
 const props = defineProps<{
@@ -108,9 +117,10 @@ const props = defineProps<{
   dnsLeakLoading: boolean
   dnsLeakError: string | null
   dnsLeakResult: DnsLeakResult | null
+  dnsLeakProgress: DnsQueryProgress[]
   fetchIpInfo: () => Promise<void> | void
   runReverseDnsLookup: () => Promise<void> | void
-  runDnsLeakTest: () => Promise<void> | void
+  runDnsLeakTest: (count?: number) => Promise<void> | void
 }>()
 
 </script>
@@ -165,6 +175,7 @@ const props = defineProps<{
         :dns-leak-loading="props.dnsLeakLoading"
         :dns-leak-error="props.dnsLeakError"
         :dns-leak-result="props.dnsLeakResult"
+        :dns-leak-progress="props.dnsLeakProgress"
         :run-dns-leak-test="props.runDnsLeakTest"
       />
       <RawIpPayload :ip-info="props.ipInfo" />

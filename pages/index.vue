@@ -167,25 +167,44 @@ const reverseDnsHostnames = ref<string[] | null>(null)
 const reverseDnsResolver = ref<string>('')
 
 // DNS Leak Test
-type DnsQueryResult = {
+type DnsServerInfo = {
+  ip_address: string
+  hostname: string | null
+  isp: string
+  organization: string
+  country: string
+  country_code: string
+  city: string
+  dnssec: boolean
+}
+
+type DnsQueryProgress = {
+  guid: string
   domain: string
-  ip: string | null
+  status: 'pending' | 'loading' | 'completed' | 'error'
   error?: string
 }
 
 type DnsLeakResult = {
-  ok: boolean
-  queries: DnsQueryResult[]
-  systemDnsServers: string[]
+  servers: DnsServerInfo[]
+  uniqueServers: DnsServerInfo[]
   leakDetected: boolean
   resolverCount: number
-  note?: string
-  error?: string
+}
+
+// Generate GUID for DNS leak test
+function generateGuid(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
 }
 
 const dnsLeakLoading = ref(false)
 const dnsLeakError = ref<string | null>(null)
 const dnsLeakResult = ref<DnsLeakResult | null>(null)
+const dnsLeakProgress = ref<DnsQueryProgress[]>([])
 const dnsLeakTestCount = ref(10)
 
 // Privacy / fingerprint hints
@@ -803,20 +822,94 @@ async function runDnsLeakTest(count?: number) {
   dnsLeakError.value = null
   dnsLeakResult.value = null
   dnsLeakLoading.value = true
+  
+  const testCount = count ?? dnsLeakTestCount.value
+  
+  // Generate GUIDs and create progress tracking
+  const guids: string[] = []
+  dnsLeakProgress.value = []
+  
+  for (let i = 0; i < testCount; i++) {
+    const guid = generateGuid()
+    guids.push(guid)
+    dnsLeakProgress.value.push({
+      guid,
+      domain: `${guid}.test.dnsleaktest.com`,
+      status: 'pending'
+    })
+  }
+
   try {
-    const testCount = count ?? dnsLeakTestCount.value
-    const res = await $fetch<DnsLeakResult>('/api/dns-leak', {
-      params: {
-        count: testCount
+    // Step 1: Make requests to test domains from browser (this triggers DNS lookups)
+    const requestPromises = guids.map(async (guid, index) => {
+      const domain = `https://${guid}.test.dnsleaktest.com/`
+      dnsLeakProgress.value[index].status = 'loading'
+      
+      try {
+        // Use image loading to trigger DNS lookup (more reliable than fetch)
+        await new Promise<void>((resolve, reject) => {
+          const img = new Image()
+          const timeout = setTimeout(() => {
+            img.onload = null
+            img.onerror = null
+            reject(new Error('Timeout'))
+          }, 5000)
+          
+          img.onload = () => {
+            clearTimeout(timeout)
+            resolve()
+          }
+          
+          img.onerror = () => {
+            clearTimeout(timeout)
+            // Even on error, DNS lookup happened, so resolve
+            resolve()
+          }
+          
+          img.src = domain
+        })
+        
+        dnsLeakProgress.value[index].status = 'completed'
+      } catch (error) {
+        dnsLeakProgress.value[index].status = 'completed' // Still mark as completed since DNS lookup happened
+        dnsLeakProgress.value[index].error = (error as Error).message || 'Request failed'
       }
     })
 
-    if (!res.ok) {
-      dnsLeakError.value = res.error || 'DNS leak test failed.'
-      return
-    }
+    // Wait a bit for DNS lookups to complete
+    await Promise.allSettled(requestPromises)
+    
+    // Small delay to ensure DNS queries are logged
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
-    dnsLeakResult.value = res
+    // Step 2: Query dnsleaktest.com API to get DNS server results
+    const res = await $fetch<{ servers: DnsServerInfo[] }>('/api/dns-leak', {
+      method: 'POST',
+      body: {
+        queries: guids
+      }
+    })
+
+    // Process results
+    const servers = res.servers || []
+    
+    // Get unique servers by IP address
+    const uniqueServersMap = new Map<string, DnsServerInfo>()
+    servers.forEach(server => {
+      if (!uniqueServersMap.has(server.ip_address)) {
+        uniqueServersMap.set(server.ip_address, server)
+      }
+    })
+    
+    const uniqueServers = Array.from(uniqueServersMap.values())
+    const leakDetected = uniqueServers.length > 1
+
+    dnsLeakResult.value = {
+      servers,
+      uniqueServers,
+      leakDetected,
+      resolverCount: uniqueServers.length
+    }
   } catch (err) {
     dnsLeakError.value = (err as Error).message || 'DNS leak test failed.'
   } finally {
@@ -1825,6 +1918,7 @@ onMounted(() => {
           :dns-leak-loading="dnsLeakLoading"
           :dns-leak-error="dnsLeakError"
           :dns-leak-result="dnsLeakResult"
+          :dns-leak-progress="dnsLeakProgress"
           :fetch-ip-info="fetchIpInfo"
           :run-reverse-dns-lookup="runReverseDnsLookup"
           :run-dns-leak-test="runDnsLeakTest"

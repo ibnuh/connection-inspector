@@ -1,122 +1,65 @@
-import { defineEventHandler, getQuery } from 'h3'
-import { promises as dns, Resolver } from 'node:dns'
+import { defineEventHandler, getQuery, readBody } from 'h3'
 
-interface DnsQueryResult {
-  domain: string
-  ip: string | null
-  error?: string
+interface DnsServerInfo {
+  guid: string
+  ip: string
+  hostname?: string
+  country?: string
+  city?: string
+  asn?: number
+  org?: string
 }
 
-interface DnsLeakResult {
-  ok: boolean
-  queries: DnsQueryResult[]
-  systemDnsServers: string[]
-  leakDetected: boolean
-  resolverCount: number
-  note?: string
-  error?: string
+interface DnsLeakApiResponse {
+  servers: Array<{
+    guid: string
+    ip: string
+    hostname?: string
+    country?: string
+    city?: string
+    asn?: number
+    org?: string
+  }>
 }
 
-// Generate random subdomains for testing
-function generateTestDomain(): string {
-  const random = Math.random().toString(36).substring(2, 15)
-  return `test-${random}.dnsleaktest.com`
-}
+export default defineEventHandler(async (event): Promise<DnsLeakApiResponse> => {
+  const body = await readBody(event).catch(() => null)
+  const queries = body?.queries as string[] | undefined
 
-// Get DNS resolver servers being used by the system
-function getDnsServers(): string[] {
-  try {
-    const resolver = new Resolver()
-    return resolver.getServers()
-  } catch {
-    return []
-  }
-}
-
-export default defineEventHandler(async (event): Promise<DnsLeakResult> => {
-  const query = getQuery(event)
-  const count = query.count ? parseInt(query.count as string, 10) : 10
-
-  if (count < 1 || count > 50) {
-    return {
-      ok: false,
-      queries: [],
-      systemDnsServers: [],
-      leakDetected: false,
-      resolverCount: 0,
-      error: 'Query count must be between 1 and 50'
-    }
+  if (!queries || !Array.isArray(queries) || queries.length === 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Missing or invalid queries array'
+    })
   }
 
   try {
-    const queries: DnsQueryResult[] = []
-    
-    // Get system DNS servers
-    const systemDnsServers = getDnsServers()
-    
-    // Perform multiple DNS queries to test DNS resolution
-    for (let i = 0; i < count; i++) {
-      const testDomain = generateTestDomain()
-      
-      try {
-        // Try IPv4 first, then IPv6
-        let addresses: string[] | string | null = null
-        try {
-          addresses = await dns.resolve4(testDomain)
-        } catch {
-          try {
-            addresses = await dns.resolve6(testDomain)
-          } catch {
-            addresses = null
-          }
-        }
+    // Call dnsleaktest.com API to get DNS server information
+    const response = await fetch('https://www.dnsleaktest.com/api/v1/servers-for-result', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ queries })
+    })
 
-        if (addresses) {
-          const ip = Array.isArray(addresses) ? addresses[0] : addresses
-          queries.push({
-            domain: testDomain,
-            ip
-          })
-        } else {
-          queries.push({
-            domain: testDomain,
-            ip: null,
-            error: 'No addresses found'
-          })
-        }
-      } catch (error) {
-        queries.push({
-          domain: testDomain,
-          ip: null,
-          error: (error as Error).message || 'DNS query failed'
-        })
-      }
+    if (!response.ok) {
+      throw createError({
+        statusCode: response.status,
+        statusMessage: `DNS leak test API returned ${response.status}`
+      })
     }
 
-    // A leak is detected if we have multiple different DNS servers configured
-    // Note: This shows server-side DNS configuration. For client-side DNS leak testing,
-    // the browser would need to make requests to domains that log DNS server IPs.
-    const leakDetected = systemDnsServers.length > 1
-
-    return {
-      ok: true,
-      queries,
-      systemDnsServers,
-      leakDetected,
-      resolverCount: systemDnsServers.length,
-      note: systemDnsServers.length === 0 
-        ? 'Could not detect DNS servers. This test shows server-side DNS configuration.'
-        : 'This shows the DNS servers configured on the server. For client-side DNS leak detection, requests would be made from your browser.'
-    }
+    const data = await response.json() as DnsLeakApiResponse
+    return data
   } catch (error) {
-    return {
-      ok: false,
-      queries: [],
-      systemDnsServers: [],
-      leakDetected: false,
-      resolverCount: 0,
-      error: (error as Error).message || 'DNS leak test failed'
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      throw error
     }
+    throw createError({
+      statusCode: 500,
+      statusMessage: (error as Error).message || 'Failed to fetch DNS leak test results'
+    })
   }
 })
-
