@@ -1735,6 +1735,21 @@ onMounted(() => {
       :copy-summary-to-clipboard="copySummaryToClipboard"
       :download-snapshot-json="downloadSnapshotJson"
       :copy-debug-snippet="copyDebugSnippet"
+      :connection-type="connectionType"
+      :connection-rtt="connectionRtt"
+      :connection-downlink="connectionDownlink"
+      :connection-save-data="connectionSaveData"
+      :client-rtt="ipInfo?.client_rtt_ms ?? null"
+      :is-mobile="ipInfo?.is_mobile ?? null"
+      :is-datacenter="ipInfo?.is_datacenter ?? null"
+      :is-satellite="ipInfo?.is_satellite ?? null"
+      :location-country="ipInfo?.location?.country ?? null"
+      :location-city="ipInfo?.location?.city ?? null"
+      :location-state="ipInfo?.location?.state ?? null"
+      :asn-org="ipInfo?.asn?.org ?? null"
+      :asn-number="ipInfo?.asn?.asn ?? null"
+      :isp="ipInfo?.asn?.org ?? null"
+      :elapsed-ms="ipInfo?.elapsed_ms ?? null"
       />
     </section>
 

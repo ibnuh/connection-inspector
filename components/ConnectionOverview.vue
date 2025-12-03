@@ -133,6 +133,21 @@ const props = defineProps<{
   copySummaryToClipboard: () => Promise<void> | void
   downloadSnapshotJson: () => void
   copyDebugSnippet: () => Promise<void> | void
+  connectionType: string | null
+  connectionRtt: number | null
+  connectionDownlink: number | null
+  connectionSaveData: boolean | null
+  clientRtt: number | null
+  isMobile: boolean | null
+  isDatacenter: boolean | null
+  isSatellite: boolean | null
+  locationCountry: string | null
+  locationCity: string | null
+  locationState: string | null
+  asnOrg: string | null
+  asnNumber: number | null
+  isp: string | null
+  elapsedMs: number | null
 }>()
 </script>
 
@@ -158,6 +173,34 @@ const props = defineProps<{
       <p v-if="props.ipError" class="mt-2 text-xs text-rose-400">
         {{ props.ipError }}
       </p>
+      
+      <!-- Connection Status -->
+      <ConnectionStatus
+        :online="props.online"
+        :connection-type="props.connectionType"
+        :connection-rtt="props.connectionRtt"
+        :connection-downlink="props.connectionDownlink"
+        :connection-save-data="props.connectionSaveData"
+        :client-rtt="props.clientRtt"
+        :is-mobile="props.isMobile"
+        :is-datacenter="props.isDatacenter"
+        :is-satellite="props.isSatellite"
+        :location-country="props.locationCountry"
+        :location-city="props.locationCity"
+        :asn-org="props.asnOrg"
+      />
+      
+      <!-- Quick Stats -->
+      <QuickStats
+        :location-country="props.locationCountry"
+        :location-city="props.locationCity"
+        :location-state="props.locationState"
+        :asn-org="props.asnOrg"
+        :asn-number="props.asnNumber"
+        :isp="props.isp"
+        :client-rtt="props.clientRtt"
+        :elapsed-ms="props.elapsedMs"
+      />
     </div>
 
     <div class="flex flex-col justify-between gap-3 rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 sm:p-4">
