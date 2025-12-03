@@ -27,7 +27,7 @@ const props = defineProps<{
               class="h-1.5 w-1.5 rounded-full"
               :class="props.permissionGeolocation === 'granted' ? 'bg-emerald-400' : props.permissionGeolocation === 'denied' ? 'bg-rose-400' : props.permissionGeolocation === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
             />
-            <span>Geolocation: {{ props.permissionGeolocation ?? 'unknown' }}</span>
+            <span>Geolocation {{ props.permissionGeolocation ?? 'unknown' }}</span>
           </div>
           <button
             type="button"
@@ -43,7 +43,7 @@ const props = defineProps<{
               class="h-1.5 w-1.5 rounded-full"
               :class="props.permissionNotifications === 'granted' ? 'bg-emerald-400' : props.permissionNotifications === 'denied' ? 'bg-rose-400' : props.permissionNotifications === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
             />
-            <span>Notifications: {{ props.permissionNotifications ?? 'unknown' }}</span>
+            <span>Notifications {{ props.permissionNotifications ?? 'unknown' }}</span>
           </div>
           <button
             type="button"
@@ -59,7 +59,7 @@ const props = defineProps<{
               class="h-1.5 w-1.5 rounded-full"
               :class="props.permissionCamera === 'granted' ? 'bg-emerald-400' : props.permissionCamera === 'denied' ? 'bg-rose-400' : props.permissionCamera === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
             />
-            <span>Camera: {{ props.permissionCamera ?? 'unknown' }}</span>
+            <span>Camera {{ props.permissionCamera ?? 'unknown' }}</span>
           </div>
           <button
             type="button"
@@ -75,7 +75,7 @@ const props = defineProps<{
               class="h-1.5 w-1.5 rounded-full"
               :class="props.permissionMicrophone === 'granted' ? 'bg-emerald-400' : props.permissionMicrophone === 'denied' ? 'bg-rose-400' : props.permissionMicrophone === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
             />
-            <span>Microphone: {{ props.permissionMicrophone ?? 'unknown' }}</span>
+            <span>Microphone {{ props.permissionMicrophone ?? 'unknown' }}</span>
           </div>
           <button
             type="button"
@@ -91,7 +91,7 @@ const props = defineProps<{
               class="h-1.5 w-1.5 rounded-full"
               :class="props.permissionClipboardRead === 'granted' ? 'bg-emerald-400' : props.permissionClipboardRead === 'denied' ? 'bg-rose-400' : props.permissionClipboardRead === 'prompt' ? 'bg-amber-400' : 'bg-slate-600'"
             />
-            <span>Clipboard read: {{ props.permissionClipboardRead ?? 'unknown' }}</span>
+            <span>Clipboard read {{ props.permissionClipboardRead ?? 'unknown' }}</span>
           </div>
           <button
             type="button"
@@ -116,7 +116,7 @@ const props = defineProps<{
           :key="key"
           class="mr-1"
         >
-          <span class="text-slate-400">{{ key }}:</span>
+          <span class="text-slate-400">{{ key }}</span>
           <span class="text-slate-300">{{ val }}</span>
           <span v-if="idx < Object.keys(props.permissionLastChecked).length - 1">•</span>
         </span>
