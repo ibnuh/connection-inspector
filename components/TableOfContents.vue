@@ -100,7 +100,7 @@ onUnmounted(() => {
     class="fixed left-4 top-1/2 z-50 hidden -translate-y-1/2 transform lg:block"
     style="max-height: calc(100vh - 2rem)"
   >
-    <div class="rounded-lg border border-slate-800 bg-slate-900/95 p-3 shadow-lg backdrop-blur">
+    <div class="w-48 rounded-lg border border-slate-800 bg-slate-900/95 p-3 shadow-lg backdrop-blur">
       <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
         Contents
       </h3>
@@ -117,7 +117,7 @@ onUnmounted(() => {
             "
             @click="scrollToSection(section.id)"
           >
-            <span class="block truncate">{{ section.label }}</span>
+            <span class="block truncate whitespace-nowrap">{{ section.label }}</span>
           </button>
         </li>
       </ul>
