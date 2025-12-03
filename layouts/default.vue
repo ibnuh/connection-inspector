@@ -20,11 +20,28 @@
       <main>
         <NuxtPage />
       </main>
-      <footer class="mt-4 border-t border-slate-900 pt-3 text-xs text-slate-600">
-        <p>
+      <footer class="border-t border-slate-900 pt-4 text-xs text-slate-600">
+        <p class="mb-3">
           Built with Nuxt 3, Vue 3 and Tailwind. Snapshot generated at runtime in your browser; no data is
           stored on the server.
         </p>
+        <div class="flex flex-wrap items-center gap-3">
+          <a
+            href="https://ibnuhx.com"
+            target="_blank"
+            class="text-slate-400 transition-colors hover:text-slate-300"
+          >
+            ibnuhx.com
+          </a>
+          <span class="text-slate-700">•</span>
+          <a
+            href="https://github.com/ibnuh"
+            target="_blank"
+            class="text-slate-400 transition-colors hover:text-slate-300"
+          >
+            GitHub @ibnuh
+          </a>
+        </div>
       </footer>
     </div>
   </div>
