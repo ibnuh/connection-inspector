@@ -1750,6 +1750,14 @@ onMounted(() => {
       :asn-number="ipInfo?.asn?.asn ?? null"
       :isp="ipInfo?.asn?.org ?? null"
       :elapsed-ms="ipInfo?.elapsed_ms ?? null"
+      :browser-name="browserName"
+      :browser-version="browserVersion"
+      :browser-engine="browserEngine"
+      :platform="platform"
+      :screen-width="screenWidth"
+      :screen-height="screenHeight"
+      :device-pixel-ratio="devicePixelRatio"
+      :hardware-concurrency="hardwareConcurrency"
       />
     </section>
 

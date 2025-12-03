@@ -148,6 +148,14 @@ const props = defineProps<{
   asnNumber: number | null
   isp: string | null
   elapsedMs: number | null
+  browserName: string | null
+  browserVersion: string | null
+  browserEngine: string | null
+  platform: string | null
+  screenWidth: number | null
+  screenHeight: number | null
+  devicePixelRatio: number | null
+  hardwareConcurrency: number | null
 }>()
 </script>
 
@@ -203,27 +211,39 @@ const props = defineProps<{
       />
     </div>
 
-    <div class="flex flex-col justify-between gap-3 rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 sm:p-4">
-      <BrowserInfo :user-agent="props.userAgent" />
-      <div class="space-y-3 text-xs text-slate-300">
-        <BrowserBasics
-          :cookies-enabled="props.cookiesEnabled"
-          :online="props.online"
-          :timezone="props.timezone"
-          :languages="props.languages"
-          :do-not-track="props.doNotTrack"
-        />
-        <FeatureSupport
-          :supports-service-worker="props.supportsServiceWorker"
-          :supports-notifications="props.supportsNotifications"
-          :supports-clipboard="props.supportsClipboard"
-          :supports-geolocation="props.supportsGeolocation"
-          :supports-web-r-t-c="props.supportsWebRTC"
-          :supports-web-g-l="props.supportsWebGL"
-          :supports-web-g-p-u="props.supportsWebGPU"
-          :supports-indexed-d-b="props.supportsIndexedDB"
-          :online-events="props.onlineEvents"
-        />
+    <div class="flex flex-col gap-4 rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
+      <!-- Browser Summary -->
+      <BrowserSummary
+        :browser-name="props.browserName"
+        :browser-version="props.browserVersion"
+        :browser-engine="props.browserEngine"
+        :platform="props.platform"
+        :screen-width="props.screenWidth"
+        :screen-height="props.screenHeight"
+        :device-pixel-ratio="props.devicePixelRatio"
+        :hardware-concurrency="props.hardwareConcurrency"
+        :timezone="props.timezone"
+        :languages="props.languages"
+        :cookies-enabled="props.cookiesEnabled"
+        :do-not-track="props.doNotTrack"
+        :online="props.online"
+        :user-agent="props.userAgent"
+      />
+
+      <!-- Feature Status Grid -->
+      <FeatureStatusGrid
+        :supports-service-worker="props.supportsServiceWorker"
+        :supports-notifications="props.supportsNotifications"
+        :supports-clipboard="props.supportsClipboard"
+        :supports-geolocation="props.supportsGeolocation"
+        :supports-web-r-t-c="props.supportsWebRTC"
+        :supports-web-g-l="props.supportsWebGL"
+        :supports-web-g-p-u="props.supportsWebGPU"
+        :supports-indexed-d-b="props.supportsIndexedDB"
+      />
+
+      <!-- Permissions Table -->
+      <div class="border-t border-slate-800 pt-3">
         <PermissionsTable
           :permission-geolocation="props.permissionGeolocation"
           :permission-notifications="props.permissionNotifications"
@@ -237,6 +257,10 @@ const props = defineProps<{
           :request-microphone-permission="props.requestMicrophonePermission"
           :request-clipboard-read-permission="props.requestClipboardReadPermission"
         />
+      </div>
+
+      <!-- Server View Comparison -->
+      <div class="border-t border-slate-800 pt-3">
         <ServerViewComparison
           :server-view-loading="props.serverViewLoading"
           :server-view-error="props.serverViewError"
