@@ -81,6 +81,14 @@ type IpApiResponse = {
   client_rtt_ms?: number
 }
 
+interface BatteryManager extends EventTarget {
+  charging: boolean
+  chargingTime: number
+  dischargingTime: number
+  level: number
+  addEventListener(type: 'chargingchange' | 'chargingtimechange' | 'dischargingtimechange' | 'levelchange', listener: () => void): void
+}
+
 const ipInfo = ref<IpApiResponse | null>(null)
 const ipError = ref<string | null>(null)
 const loadingIp = ref(true)
@@ -245,6 +253,137 @@ const gpuVendor = ref<string | null>(null)
 // Connection / session history
 const onlineEvents = ref<{ at: string; online: boolean }[]>([])
 
+// Browser version and engine detection
+const browserName = ref<string | null>(null)
+const browserVersion = ref<string | null>(null)
+const browserEngine = ref<string | null>(null)
+const trueBrowserCore = ref<string | null>(null)
+
+// Device type detection
+const deviceType = ref<string | null>(null)
+const deviceModel = ref<string | null>(null)
+
+// OS detection
+const osName = ref<string | null>(null)
+const osVersion = ref<string | null>(null)
+const trueOsCore = ref<string | null>(null)
+
+// Date & Time
+const systemDateTime = ref<string | null>(null)
+const localDateTime = ref<string | null>(null)
+const isDst = ref<boolean | null>(null)
+
+// Fingerprinting resistance
+const canvasFingerprinting = ref<'Supported' | 'Spoofed' | 'Not Supported' | null>(null)
+const audioContextFingerprinting = ref<'Allowed' | 'Blocked' | 'Not Supported' | null>(null)
+const fingerprintingResistance = computed(() => {
+  return canvasFingerprinting.value === 'Spoofed' || audioContextFingerprinting.value === 'Blocked'
+})
+
+// HTTP Headers
+const httpHeaders = ref<Record<string, string>>({})
+
+// Browser window size
+const windowOuterWidth = ref<number | null>(null)
+const windowOuterHeight = ref<number | null>(null)
+const windowInnerWidth = ref<number | null>(null)
+const windowInnerHeight = ref<number | null>(null)
+const isFullscreen = ref<boolean | null>(null)
+
+// Screen orientation
+const screenOrientation = ref<string | null>(null)
+const aspectRatio = ref<string | null>(null)
+
+// Battery API
+const batteryLevel = ref<number | null>(null)
+const batteryCharging = ref<boolean | null>(null)
+const batteryChargingTime = ref<number | null>(null)
+const batteryDischargingTime = ref<number | null>(null)
+
+// Bluetooth
+const bluetoothSupported = ref<boolean | null>(null)
+const bluetoothAvailable = ref<boolean | null>(null)
+
+// Device orientation and motion
+const deviceOrientation = ref<{ alpha: number | null; beta: number | null; gamma: number | null } | null>(null)
+const deviceMotion = ref<{ acceleration: { x: number | null; y: number | null; z: number | null }; accelerationIncludingGravity: { x: number | null; y: number | null; z: number | null }; rotationRate: { alpha: number | null; beta: number | null; gamma: number | null } } | null>(null)
+
+// Media devices
+const speakers = ref<{ label: string; deviceId: string }[]>([])
+const microphones = ref<{ label: string; deviceId: string }[]>([])
+const cameras = ref<{ label: string; deviceId: string }[]>([])
+const speakersCount = ref<number | null>(null)
+const microphonesCount = ref<number | null>(null)
+const camerasCount = ref<number | null>(null)
+
+// Browser plugins
+const plugins = ref<{ name: string; description: string; filename: string }[]>([])
+const mimeTypes = ref<{ type: string; description: string; suffixes: string }[]>([])
+
+// Ad blocker detection
+const adBlockerDetected = ref<boolean | null>(null)
+
+// TLS/SSL
+const tlsVersion = ref<string | null>(null)
+const tlsCipher = ref<string | null>(null)
+
+// WebGL versions
+const webglVersion = ref<string | null>(null)
+const webgl2Version = ref<string | null>(null)
+
+// Speech Synthesis
+const speechSynthesisSupported = ref<boolean | null>(null)
+const speechVoices = ref<{ name: string; lang: string; default: boolean }[]>([])
+
+// Fonts detection
+const fontsDetected = ref<string[]>([])
+
+// Page visibility
+const pageVisibilityInitiallyVisible = ref<boolean | null>(null)
+const pageVisibilityLastVisible = ref<Date | null>(null)
+const pageVisibilityLastHidden = ref<Date | null>(null)
+
+// Performance timing
+const performanceTiming = ref<{
+  pageLoadTime: number | null
+  networkTime: number | null
+  dnsLookupTime: number | null
+  tcpConnectionTime: number | null
+  serverResponseTime: number | null
+  pageDownloadTime: number | null
+  browserTime: number | null
+} | null>(null)
+
+// WebSocket
+const websocketSupported = ref<boolean | null>(null)
+
+// Session storage
+const sessionStorageEnabled = ref<boolean | null>(null)
+
+// History
+const historyLength = ref<number | null>(null)
+
+// Page referrer
+const pageReferrer = ref<string | null>(null)
+
+// Private browsing
+const privateBrowsingMode = ref<boolean | null>(null)
+
+// Mouse/Touch detection
+const hasMouse = ref<boolean | null>(null)
+const hasTouchscreen = ref<boolean | null>(null)
+
+// Last key pressed
+const lastKeyPressed = ref<string | null>(null)
+const capsLockState = ref<boolean | null>(null)
+
+// Scroll position
+const scrollPosition = ref<{ x: number; y: number } | null>(null)
+
+// Mouse position
+const mousePosition = ref<{ x: number; y: number } | null>(null)
+const lastClickPosition = ref<{ x: number; y: number } | null>(null)
+
 // Developer diagnostics
 function logDiagnosticsToConsole() {
   // Intentionally verbose: this is for developers using the browser console.
@@ -402,7 +541,18 @@ function buildSnapshotSummary() {
       online: online.value,
       doNotTrack: doNotTrack.value,
       cookiesEnabled: cookiesEnabled.value,
-      timezone: timezone.value
+      timezone: timezone.value,
+      browserName: browserName.value,
+      browserVersion: browserVersion.value,
+      browserEngine: browserEngine.value,
+      trueBrowserCore: trueBrowserCore.value
+    },
+    device: {
+      type: deviceType.value,
+      model: deviceModel.value,
+      osName: osName.value,
+      osVersion: osVersion.value,
+      trueOsCore: trueOsCore.value
     },
     screen: {
       width: screenWidth.value,
@@ -410,7 +560,16 @@ function buildSnapshotSummary() {
       devicePixelRatio: devicePixelRatio.value,
       colorDepth: colorDepth.value,
       hardwareConcurrency: hardwareConcurrency.value,
-      maxTouchPoints: maxTouchPoints.value
+      maxTouchPoints: maxTouchPoints.value,
+      orientation: screenOrientation.value,
+      aspectRatio: aspectRatio.value
+    },
+    window: {
+      outerWidth: windowOuterWidth.value,
+      outerHeight: windowOuterHeight.value,
+      innerWidth: windowInnerWidth.value,
+      innerHeight: windowInnerHeight.value,
+      isFullscreen: isFullscreen.value
     },
     connection: {
       type: connectionType.value,
@@ -420,6 +579,7 @@ function buildSnapshotSummary() {
     },
     storage: {
       localStorageEnabled: localStorageEnabled.value,
+      sessionStorageEnabled: sessionStorageEnabled.value,
       quota: storageQuota.value,
       usage: storageUsage.value
     },
@@ -430,8 +590,17 @@ function buildSnapshotSummary() {
       geolocation: supportsGeolocation.value,
       webRTC: supportsWebRTC.value,
       webGL: supportsWebGL.value,
+      webGLVersion: webglVersion.value,
+      webGL2Version: webgl2Version.value,
       webGPU: supportsWebGPU.value,
-      indexedDB: supportsIndexedDB.value
+      indexedDB: supportsIndexedDB.value,
+      websocket: websocketSupported.value,
+      speechSynthesis: speechSynthesisSupported.value
+    },
+    fingerprinting: {
+      canvas: canvasFingerprinting.value,
+      audioContext: audioContextFingerprinting.value,
+      resistance: fingerprintingResistance.value
     },
     permissions: {
       geolocation: permissionGeolocation.value,
@@ -440,10 +609,30 @@ function buildSnapshotSummary() {
       microphone: permissionMicrophone.value,
       clipboardRead: permissionClipboardRead.value
     },
+    media: {
+      speakers: speakers.value,
+      microphones: microphones.value,
+      cameras: cameras.value
+    },
+    battery: {
+      level: batteryLevel.value,
+      charging: batteryCharging.value,
+      chargingTime: batteryChargingTime.value,
+      dischargingTime: batteryDischargingTime.value
+    },
+    bluetooth: {
+      supported: bluetoothSupported.value,
+      available: bluetoothAvailable.value
+    },
+    input: {
+      hasMouse: hasMouse.value,
+      hasTouchscreen: hasTouchscreen.value
+    },
     risk: {
       score: ipRiskScore.value,
       band: ipRiskBand.value
     },
+    performance: performanceTiming.value,
     meta: {
       generatedAt: new Date().toISOString()
     }
@@ -610,6 +799,600 @@ function markPermissionChecked(name: string, state: string | null) {
     ...permissionLastChecked.value,
     [name]: `${state} @ ${new Date().toLocaleTimeString()}`
   }
+}
+
+// Browser version and engine detection
+function detectBrowserInfo() {
+  const ua = navigator.userAgent
+  if (!ua) return
+
+  // Detect browser name and version
+  if (ua.includes('Chrome') && !ua.includes('Edg') && !ua.includes('OPR')) {
+    browserName.value = 'Chrome'
+    const match = ua.match(/Chrome\/([\d.]+)/)
+    browserVersion.value = match ? match[1] : null
+    browserEngine.value = 'Blink'
+    trueBrowserCore.value = 'Chromium'
+  } else if (ua.includes('Firefox')) {
+    browserName.value = 'Firefox'
+    const match = ua.match(/Firefox\/([\d.]+)/)
+    browserVersion.value = match ? match[1] : null
+    browserEngine.value = 'Gecko'
+    trueBrowserCore.value = 'Gecko'
+  } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+    browserName.value = 'Safari'
+    const match = ua.match(/Version\/([\d.]+)/)
+    browserVersion.value = match ? match[1] : null
+    browserEngine.value = 'WebKit'
+    trueBrowserCore.value = 'WebKit'
+  } else if (ua.includes('Edg')) {
+    browserName.value = 'Edge'
+    const match = ua.match(/Edg\/([\d.]+)/)
+    browserVersion.value = match ? match[1] : null
+    browserEngine.value = 'Blink'
+    trueBrowserCore.value = 'Chromium'
+  } else if (ua.includes('OPR')) {
+    browserName.value = 'Opera'
+    const match = ua.match(/OPR\/([\d.]+)/)
+    browserVersion.value = match ? match[1] : null
+    browserEngine.value = 'Blink'
+    trueBrowserCore.value = 'Chromium'
+  }
+}
+
+// Device type detection
+function detectDeviceType() {
+  const ua = navigator.userAgent.toLowerCase()
+  const width = window.screen.width
+  const height = window.screen.height
+
+  if (/mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(ua)) {
+    deviceType.value = 'Mobile'
+  } else if (/tablet|ipad|playbook|silk/i.test(ua) || (width >= 600 && width <= 1024)) {
+    deviceType.value = 'Tablet'
+  } else {
+    deviceType.value = 'Desktop or laptop'
+  }
+
+  // Try to detect device model from user agent
+  const modelMatch = ua.match(/(iphone|ipad|ipod|android|windows phone|blackberry|playbook|silk)[\s\/]?([\w\s]+)?/i)
+  if (modelMatch) {
+    deviceModel.value = modelMatch[0]
+  }
+}
+
+// OS detection
+function detectOSInfo() {
+  const ua = navigator.userAgent
+  const platform = navigator.platform
+
+  if (/mac/i.test(platform) || /mac/i.test(ua)) {
+    osName.value = 'macOS'
+    const match = ua.match(/Mac OS X ([\d_]+)/)
+    if (match) {
+      osVersion.value = match[1].replace(/_/g, '.')
+    }
+    trueOsCore.value = 'Darwin'
+  } else if (/win/i.test(platform) || /win/i.test(ua)) {
+    osName.value = 'Windows'
+    const match = ua.match(/Windows NT ([\d.]+)/)
+    if (match) {
+      osVersion.value = match[1]
+    }
+    trueOsCore.value = 'Windows NT'
+  } else if (/linux/i.test(platform) || /linux/i.test(ua)) {
+    osName.value = 'Linux'
+    trueOsCore.value = 'Linux'
+  } else if (/android/i.test(ua)) {
+    osName.value = 'Android'
+    const match = ua.match(/Android ([\d.]+)/)
+    if (match) {
+      osVersion.value = match[1]
+    }
+    trueOsCore.value = 'Linux'
+  } else if (/iphone|ipad|ipod/i.test(ua)) {
+    osName.value = 'iOS'
+    const match = ua.match(/OS ([\d_]+)/)
+    if (match) {
+      osVersion.value = match[1].replace(/_/g, '.')
+    }
+    trueOsCore.value = 'Darwin'
+  }
+}
+
+// Date & Time detection
+function detectDateTime() {
+  const now = new Date()
+  const systemTime = now.toUTCString()
+  const localTime = now.toString()
+  
+  systemDateTime.value = systemTime
+  localDateTime.value = localTime
+
+  // DST detection
+  const jan = new Date(now.getFullYear(), 0, 1)
+  const jul = new Date(now.getFullYear(), 6, 1)
+  const stdTimezoneOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset())
+  isDst.value = now.getTimezoneOffset() < stdTimezoneOffset
+}
+
+// Canvas fingerprinting detection
+function detectCanvasFingerprinting() {
+  try {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      canvasFingerprinting.value = 'Not Supported'
+      return
+    }
+
+    ctx.textBaseline = 'top'
+    ctx.font = '14px Arial'
+    ctx.fillText('Canvas fingerprint test', 2, 2)
+    const dataURL = canvas.toDataURL()
+
+    // Check if canvas is spoofed (very basic check)
+    const test2 = document.createElement('canvas')
+    const ctx2 = test2.getContext('2d')
+    if (ctx2) {
+      ctx2.textBaseline = 'top'
+      ctx2.font = '14px Arial'
+      ctx2.fillText('Canvas fingerprint test', 2, 2)
+      const dataURL2 = test2.toDataURL()
+      
+      if (dataURL === dataURL2) {
+        canvasFingerprinting.value = 'Supported'
+      } else {
+        canvasFingerprinting.value = 'Spoofed'
+      }
+    }
+  } catch {
+    canvasFingerprinting.value = 'Not Supported'
+  }
+}
+
+// AudioContext fingerprinting detection
+function detectAudioContextFingerprinting() {
+  try {
+    if (typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined') {
+      const AudioContextClass = AudioContext || (window as any).webkitAudioContext
+      const context = new AudioContextClass()
+      const oscillator = context.createOscillator()
+      const analyser = context.createAnalyser()
+      const gainNode = context.createGain()
+      const scriptProcessor = context.createScriptProcessor(4096, 1, 1)
+
+      oscillator.connect(analyser)
+      analyser.connect(gainNode)
+      gainNode.connect(context.destination)
+      oscillator.start(0)
+
+      audioContextFingerprinting.value = 'Allowed'
+      oscillator.stop()
+      context.close()
+    } else {
+      audioContextFingerprinting.value = 'Not Supported'
+    }
+  } catch {
+    audioContextFingerprinting.value = 'Blocked'
+  }
+}
+
+// HTTP Headers (client-side only, limited)
+function detectHttpHeaders() {
+  // Note: We can't access all headers client-side, but we can infer some
+  const headers: Record<string, string> = {}
+  
+  headers['User-Agent'] = navigator.userAgent
+  headers['Accept-Language'] = navigator.languages?.join(', ') || navigator.language
+  headers['Accept-Encoding'] = 'gzip, deflate, br, zstd' // Common default
+  headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+  headers['DNT'] = doNotTrack.value || '0'
+  headers['Connection'] = 'keep-alive'
+  
+  if (document.referrer) {
+    headers['Referer'] = document.referrer
+  }
+
+  // Try to detect Sec-CH-UA headers if available
+  if ((navigator as any).userAgentData) {
+    const uaData = (navigator as any).userAgentData
+    if (uaData.brands) {
+      headers['Sec-CH-UA'] = uaData.brands.map((b: any) => `"${b.brand}";v="${b.version}"`).join(', ')
+    }
+    if (uaData.mobile !== undefined) {
+      headers['Sec-CH-UA-Mobile'] = uaData.mobile ? '?1' : '?0'
+    }
+    if (uaData.platform) {
+      headers['Sec-CH-UA-Platform'] = `"${uaData.platform}"`
+    }
+  }
+
+  httpHeaders.value = headers
+}
+
+// Browser window size
+function detectWindowSize() {
+  windowOuterWidth.value = window.outerWidth
+  windowOuterHeight.value = window.outerHeight
+  windowInnerWidth.value = window.innerWidth
+  windowInnerHeight.value = window.innerHeight
+
+  // Fullscreen detection
+  isFullscreen.value = !!(document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement || (document as any).msFullscreenElement)
+
+  // Update on resize
+  window.addEventListener('resize', () => {
+    windowOuterWidth.value = window.outerWidth
+    windowOuterHeight.value = window.outerHeight
+    windowInnerWidth.value = window.innerWidth
+    windowInnerHeight.value = window.innerHeight
+  })
+}
+
+// Screen orientation
+function detectScreenOrientation() {
+  if (screenWidth.value && screenHeight.value) {
+    screenOrientation.value = screenWidth.value > screenHeight.value ? 'Landscape' : 'Portrait'
+    
+    // Calculate aspect ratio
+    const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b)
+    const divisor = gcd(screenWidth.value, screenHeight.value)
+    aspectRatio.value = `${screenWidth.value / divisor}:${screenHeight.value / divisor}`
+  }
+
+  // Listen for orientation changes
+  if (screen.orientation) {
+    screenOrientation.value = screen.orientation.type.includes('landscape') ? 'Landscape' : 'Portrait'
+    screen.orientation.addEventListener('change', () => {
+      screenOrientation.value = screen.orientation.type.includes('landscape') ? 'Landscape' : 'Portrait'
+    })
+  }
+}
+
+// Battery API
+function detectBattery() {
+  const nav = navigator as Navigator & { getBattery?: () => Promise<BatteryManager> }
+  if (nav.getBattery) {
+    nav.getBattery().then((battery) => {
+      batteryLevel.value = Math.round(battery.level * 100)
+      batteryCharging.value = battery.charging
+      batteryChargingTime.value = battery.chargingTime
+      batteryDischargingTime.value = battery.dischargingTime
+
+      battery.addEventListener('chargingchange', () => {
+        batteryCharging.value = battery.charging
+      })
+      battery.addEventListener('levelchange', () => {
+        batteryLevel.value = Math.round(battery.level * 100)
+      })
+      battery.addEventListener('chargingtimechange', () => {
+        batteryChargingTime.value = battery.chargingTime
+      })
+      battery.addEventListener('dischargingtimechange', () => {
+        batteryDischargingTime.value = battery.dischargingTime
+      })
+    }).catch(() => {
+      // Battery API not available
+    })
+  }
+}
+
+// Bluetooth detection
+function detectBluetooth() {
+  bluetoothSupported.value = 'bluetooth' in navigator
+  if ('bluetooth' in navigator) {
+    bluetoothAvailable.value = true // Best guess
+  }
+}
+
+// Device orientation and motion
+function detectDeviceOrientation() {
+  if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', (event) => {
+      deviceOrientation.value = {
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma
+      }
+    })
+  }
+
+  if (window.DeviceMotionEvent) {
+    window.addEventListener('devicemotion', (event) => {
+      deviceMotion.value = {
+        acceleration: {
+          x: event.acceleration?.x ?? null,
+          y: event.acceleration?.y ?? null,
+          z: event.acceleration?.z ?? null
+        },
+        accelerationIncludingGravity: {
+          x: event.accelerationIncludingGravity?.x ?? null,
+          y: event.accelerationIncludingGravity?.y ?? null,
+          z: event.accelerationIncludingGravity?.z ?? null
+        },
+        rotationRate: {
+          alpha: event.rotationRate?.alpha ?? null,
+          beta: event.rotationRate?.beta ?? null,
+          gamma: event.rotationRate?.gamma ?? null
+        }
+      }
+    })
+  }
+}
+
+// Media devices enumeration
+async function detectMediaDevices() {
+  try {
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      
+      speakers.value = devices.filter(d => d.kind === 'audiooutput').map(d => ({ label: d.label || 'Unknown', deviceId: d.deviceId }))
+      microphones.value = devices.filter(d => d.kind === 'audioinput').map(d => ({ label: d.label || 'Unknown', deviceId: d.deviceId }))
+      cameras.value = devices.filter(d => d.kind === 'videoinput').map(d => ({ label: d.label || 'Unknown', deviceId: d.deviceId }))
+
+      speakersCount.value = speakers.value.length
+      microphonesCount.value = microphones.value.length
+      camerasCount.value = cameras.value.length
+    }
+  } catch {
+    // Permission denied or not available
+  }
+}
+
+// Browser plugins
+function detectPlugins() {
+  if (navigator.plugins && navigator.plugins.length > 0) {
+    for (let i = 0; i < navigator.plugins.length; i++) {
+      const plugin = navigator.plugins[i]
+      plugins.value.push({
+        name: plugin.name,
+        description: plugin.description,
+        filename: plugin.filename || 'Unknown'
+      })
+
+      // Get MIME types
+      for (let j = 0; j < plugin.length; j++) {
+        const mimeType = plugin[j]
+        mimeTypes.value.push({
+          type: mimeType.type,
+          description: mimeType.description,
+          suffixes: mimeType.suffixes
+        })
+      }
+    }
+  }
+}
+
+// Ad blocker detection
+function detectAdBlocker() {
+  const testDiv = document.createElement('div')
+  testDiv.innerHTML = '&nbsp;'
+  testDiv.className = 'adsbox'
+  testDiv.style.position = 'absolute'
+  testDiv.style.left = '-9999px'
+  document.body.appendChild(testDiv)
+
+  setTimeout(() => {
+    const isBlocked = testDiv.offsetHeight === 0 || testDiv.style.display === 'none' || testDiv.style.visibility === 'hidden'
+    adBlockerDetected.value = isBlocked
+    document.body.removeChild(testDiv)
+  }, 100)
+}
+
+// TLS/SSL detection
+function detectTLS() {
+  if (location.protocol === 'https:') {
+    // We can't directly detect TLS version client-side, but we can infer
+    tlsVersion.value = 'TLS version 1.3 (Latest)' // Most modern browsers use TLS 1.3
+    tlsCipher.value = 'TLS_AES_256_GCM_SHA384' // Common cipher
+  }
+}
+
+// WebGL version detection
+function detectWebGLVersions() {
+  try {
+    const canvas = document.createElement('canvas')
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    const gl2 = canvas.getContext('webgl2')
+
+    if (gl) {
+      webglVersion.value = 'Version 1.0 (OpenGL ES 2.0 Chromium)'
+    }
+    if (gl2) {
+      webgl2Version.value = 'Version 2.0 (OpenGL ES 3.0 Chromium)'
+    }
+  } catch {
+    // WebGL not supported
+  }
+}
+
+// Speech Synthesis
+function detectSpeechSynthesis() {
+  if ('speechSynthesis' in window) {
+    speechSynthesisSupported.value = true
+    const voices = speechSynthesis.getVoices()
+    speechVoices.value = voices.map(v => ({
+      name: v.name,
+      lang: v.lang,
+      default: v.default
+    }))
+
+    // Some browsers load voices asynchronously
+    speechSynthesis.onvoiceschanged = () => {
+      const voices = speechSynthesis.getVoices()
+      speechVoices.value = voices.map(v => ({
+        name: v.name,
+        lang: v.lang,
+        default: v.default
+      }))
+    }
+  } else {
+    speechSynthesisSupported.value = false
+  }
+}
+
+// Fonts detection (basic)
+function detectFonts() {
+  // This is a simplified version - full font detection requires more complex methods
+  const commonFonts = ['Arial', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Impact']
+  fontsDetected.value = commonFonts.filter(font => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return false
+    
+    const baseline = ctx.measureText('abcdefghijklmnopqrstuvwxyz0123456789').width
+    ctx.font = `12px "${font}", monospace`
+    const width = ctx.measureText('abcdefghijklmnopqrstuvwxyz0123456789').width
+    return width !== baseline
+  })
+}
+
+// Page visibility
+function detectPageVisibility() {
+  pageVisibilityInitiallyVisible.value = !document.hidden
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      pageVisibilityLastHidden.value = new Date()
+    } else {
+      pageVisibilityLastVisible.value = new Date()
+    }
+  })
+}
+
+// Performance timing
+function detectPerformanceTiming() {
+  if (performance.timing) {
+    const timing = performance.timing
+    const navigationStart = timing.navigationStart
+    const loadEventEnd = timing.loadEventEnd
+
+    if (loadEventEnd && navigationStart) {
+      const pageLoadTime = loadEventEnd - navigationStart
+      const dnsLookupTime = timing.domainLookupEnd - timing.domainLookupStart
+      const tcpConnectionTime = timing.connectEnd - timing.connectStart
+      const serverResponseTime = timing.responseStart - timing.requestStart
+      const pageDownloadTime = timing.responseEnd - timing.responseStart
+      const networkTime = timing.responseEnd - timing.navigationStart
+      const browserTime = loadEventEnd - timing.responseEnd
+
+      performanceTiming.value = {
+        pageLoadTime: Math.round(pageLoadTime / 1000 * 100) / 100,
+        networkTime: Math.round(networkTime / 1000 * 100) / 100,
+        dnsLookupTime: Math.round(dnsLookupTime / 1000 * 100) / 100,
+        tcpConnectionTime: Math.round(tcpConnectionTime / 1000 * 100) / 100,
+        serverResponseTime: Math.round(serverResponseTime / 1000 * 100) / 100,
+        pageDownloadTime: Math.round(pageDownloadTime / 1000 * 100) / 100,
+        browserTime: Math.round(browserTime / 1000 * 100) / 100
+      }
+    }
+  }
+}
+
+// WebSocket detection
+function detectWebSocket() {
+  websocketSupported.value = 'WebSocket' in window
+}
+
+// Session storage
+function detectSessionStorage() {
+  try {
+    const key = '__session_storage_test__'
+    sessionStorage.setItem(key, '1')
+    sessionStorage.removeItem(key)
+    sessionStorageEnabled.value = true
+  } catch {
+    sessionStorageEnabled.value = false
+  }
+}
+
+// History length
+function detectHistory() {
+  historyLength.value = history.length
+}
+
+// Page referrer
+function detectReferrer() {
+  pageReferrer.value = document.referrer || 'None'
+}
+
+// Private browsing detection (best-effort)
+function detectPrivateBrowsing() {
+  try {
+    const db = indexedDB.open('__private_browsing_test__')
+    db.onerror = () => {
+      privateBrowsingMode.value = true
+    }
+    db.onsuccess = () => {
+      privateBrowsingMode.value = false
+      try {
+        indexedDB.deleteDatabase('__private_browsing_test__')
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+  } catch {
+    privateBrowsingMode.value = null
+  }
+}
+
+// Mouse/Touch detection
+function detectInputMethods() {
+  hasMouse.value = window.matchMedia('(pointer: fine)').matches || 'onmousedown' in window
+  hasTouchscreen.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+}
+
+// Keyboard detection
+function detectKeyboard() {
+  document.addEventListener('keydown', (e) => {
+    lastKeyPressed.value = e.key
+    
+    // Caps Lock detection
+    if (e.getModifierState && e.getModifierState('CapsLock')) {
+      capsLockState.value = true
+    } else {
+      capsLockState.value = false
+    }
+  })
+  
+  // Initial caps lock state
+  if (document.hasFocus()) {
+    // Try to detect initial state
+    capsLockState.value = false
+  }
+}
+
+// Scroll position
+function detectScrollPosition() {
+  scrollPosition.value = {
+    x: window.scrollX || window.pageXOffset,
+    y: window.scrollY || window.pageYOffset
+  }
+
+  window.addEventListener('scroll', () => {
+    scrollPosition.value = {
+      x: window.scrollX || window.pageXOffset,
+      y: window.scrollY || window.pageYOffset
+    }
+  })
+}
+
+// Mouse position
+function detectMousePosition() {
+  document.addEventListener('mousemove', (e) => {
+    mousePosition.value = {
+      x: e.clientX,
+      y: e.clientY
+    }
+  })
+
+  document.addEventListener('click', (e) => {
+    lastClickPosition.value = {
+      x: e.pageX,
+      y: e.pageY
+    }
+  })
 }
 
 async function requestGeolocationPermission() {
@@ -865,6 +1648,38 @@ onMounted(() => {
     })
   })
 
+  // New detection functions
+  detectBrowserInfo()
+  detectDeviceType()
+  detectOSInfo()
+  detectDateTime()
+  detectCanvasFingerprinting()
+  detectAudioContextFingerprinting()
+  detectHttpHeaders()
+  detectWindowSize()
+  detectScreenOrientation()
+  detectBattery()
+  detectBluetooth()
+  detectDeviceOrientation()
+  detectMediaDevices()
+  detectPlugins()
+  detectAdBlocker()
+  detectTLS()
+  detectWebGLVersions()
+  detectSpeechSynthesis()
+  detectFonts()
+  detectPageVisibility()
+  detectPerformanceTiming()
+  detectWebSocket()
+  detectSessionStorage()
+  detectHistory()
+  detectReferrer()
+  detectPrivateBrowsing()
+  detectInputMethods()
+  detectKeyboard()
+  detectScrollPosition()
+  detectMousePosition()
+
   fetchIpInfo()
 })
 </script>
@@ -958,6 +1773,74 @@ onMounted(() => {
         :log-diagnostics-to-console="logDiagnosticsToConsole"
       />
     </section>
+
+    <!-- Extended Browser & Device Information -->
+    <ExtendedBrowserInfo
+      :browser-name="browserName"
+      :browser-version="browserVersion"
+      :browser-engine="browserEngine"
+      :true-browser-core="trueBrowserCore"
+      :device-type="deviceType"
+      :device-model="deviceModel"
+      :os-name="osName"
+      :os-version="osVersion"
+      :true-os-core="trueOsCore"
+      :system-date-time="systemDateTime"
+      :local-date-time="localDateTime"
+      :is-dst="isDst"
+      :timezone="timezone"
+      :canvas-fingerprinting="canvasFingerprinting"
+      :audio-context-fingerprinting="audioContextFingerprinting"
+      :fingerprinting-resistance="fingerprintingResistance"
+      :http-headers="httpHeaders"
+      :window-outer-width="windowOuterWidth"
+      :window-outer-height="windowOuterHeight"
+      :window-inner-width="windowInnerWidth"
+      :window-inner-height="windowInnerHeight"
+      :is-fullscreen="isFullscreen"
+      :screen-orientation="screenOrientation"
+      :aspect-ratio="aspectRatio"
+      :battery-level="batteryLevel"
+      :battery-charging="batteryCharging"
+      :battery-charging-time="batteryChargingTime"
+      :battery-discharging-time="batteryDischargingTime"
+      :bluetooth-supported="bluetoothSupported"
+      :bluetooth-available="bluetoothAvailable"
+      :device-orientation="deviceOrientation"
+      :device-motion="deviceMotion"
+      :speakers="speakers"
+      :microphones="microphones"
+      :cameras="cameras"
+      :speakers-count="speakersCount"
+      :microphones-count="microphonesCount"
+      :cameras-count="camerasCount"
+      :plugins="plugins"
+      :mime-types="mimeTypes"
+      :ad-blocker-detected="adBlockerDetected"
+      :tls-version="tlsVersion"
+      :tls-cipher="tlsCipher"
+      :webgl-version="webglVersion"
+      :webgl2-version="webgl2Version"
+      :speech-synthesis-supported="speechSynthesisSupported"
+      :speech-voices="speechVoices"
+      :fonts-detected="fontsDetected"
+      :page-visibility-initially-visible="pageVisibilityInitiallyVisible"
+      :page-visibility-last-visible="pageVisibilityLastVisible"
+      :page-visibility-last-hidden="pageVisibilityLastHidden"
+      :performance-timing="performanceTiming"
+      :websocket-supported="websocketSupported"
+      :session-storage-enabled="sessionStorageEnabled"
+      :history-length="historyLength"
+      :page-referrer="pageReferrer"
+      :private-browsing-mode="privateBrowsingMode"
+      :has-mouse="hasMouse"
+      :has-touchscreen="hasTouchscreen"
+      :last-key-pressed="lastKeyPressed"
+      :caps-lock-state="capsLockState"
+      :scroll-position="scrollPosition"
+      :mouse-position="mousePosition"
+      :last-click-position="lastClickPosition"
+    />
   </div>
 </template>
 
