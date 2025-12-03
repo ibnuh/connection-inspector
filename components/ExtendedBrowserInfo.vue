@@ -86,7 +86,7 @@ function formatBatteryTime(seconds: number | null): string {
 <template>
   <div class="space-y-6">
     <!-- Device Type / Model -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="device-type" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Device Type / Model</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -101,7 +101,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Operating System -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="operating-system" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Operating System</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -118,7 +118,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Browser -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="browser" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Browser</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -135,7 +135,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Date & Time -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="date-time" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Date & Time</h3>
       <dl class="grid gap-2 text-xs">
         <div>
@@ -154,7 +154,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Fingerprinting Resistance -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="fingerprinting-resistance" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Fingerprinting Resistance</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -173,7 +173,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- HTTP Request Headers -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="http-headers" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">HTTP Request Headers</h3>
       <dl class="space-y-1 text-xs">
         <div v-for="(value, key) in props.httpHeaders" :key="key" class="flex gap-2">
@@ -184,7 +184,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Browser Window Size -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="browser-window" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Browser Window Size</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -209,7 +209,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Screen Orientation -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="screen" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Screen</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -224,7 +224,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Battery Status -->
-    <section v-if="props.batteryLevel !== null" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="battery-status" v-if="props.batteryLevel !== null" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Battery Status (Live)</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -245,7 +245,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Bluetooth -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="bluetooth" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Bluetooth</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -264,7 +264,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Device Orientation -->
-    <section v-if="props.deviceOrientation" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="device-orientation" v-if="props.deviceOrientation" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Device Orientation (Live)</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-3">
         <div>
@@ -289,7 +289,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Device Pointing Method -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="device-pointing" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Device Pointing Method</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -308,7 +308,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Speakers -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="speakers" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Speakers</h3>
       <dl class="grid gap-2 text-xs">
         <div>
@@ -327,7 +327,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Microphones -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="microphones" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Microphones</h3>
       <dl class="grid gap-2 text-xs">
         <div>
@@ -346,7 +346,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Cameras -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="cameras" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Cameras</h3>
       <dl class="grid gap-2 text-xs">
         <div>
@@ -365,7 +365,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Browser Plugins -->
-    <section v-if="props.plugins.length > 0" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="browser-plugins" v-if="props.plugins.length > 0" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Browser Plugins</h3>
       <dl class="space-y-2 text-xs">
         <div v-for="(plugin, idx) in props.plugins" :key="idx" class="rounded bg-slate-950/60 p-2">
@@ -377,7 +377,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Browser MIME Types -->
-    <section v-if="props.mimeTypes.length > 0" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="mime-types" v-if="props.mimeTypes.length > 0" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Browser MIME Types</h3>
       <dl class="space-y-1 text-xs">
         <div v-for="(mime, idx) in props.mimeTypes" :key="idx" class="flex gap-2">
@@ -388,7 +388,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Content Filtering -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="content-filtering" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Content Filtering</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -401,7 +401,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- TLS / SSL -->
-    <section v-if="props.tlsVersion" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="tls-ssl" v-if="props.tlsVersion" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">TLS / SSL</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -416,7 +416,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- WebGL -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="webgl" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">WebGL</h3>
       <dl class="grid gap-2 text-xs">
         <div v-if="props.webglVersion">
@@ -431,7 +431,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Speech Synthesis -->
-    <section v-if="props.speechSynthesisSupported" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="speech-synthesis" v-if="props.speechSynthesisSupported" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">SpeechSynthesis</h3>
       <dl class="grid gap-2 text-xs">
         <div>
@@ -453,13 +453,13 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Fonts -->
-    <section v-if="props.fontsDetected.length > 0" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="fonts" v-if="props.fontsDetected.length > 0" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Fonts</h3>
       <p class="text-xs text-slate-300">{{ props.fontsDetected.join(', ') }}</p>
     </section>
 
     <!-- Page Visibility -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="page-visibility" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Page Visibility Changes (Live)</h3>
       <dl class="grid gap-2 text-xs">
         <div>
@@ -478,7 +478,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Performance -->
-    <section v-if="props.performanceTiming" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="performance" v-if="props.performanceTiming" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Performance</h3>
       <dl class="space-y-1 text-xs">
         <div>
@@ -513,7 +513,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- WebSocket -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="websocket" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">WebSocket</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -530,7 +530,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Storage -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="storage" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Storage</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-3">
         <div>
@@ -551,7 +551,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- History -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="history" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">History</h3>
       <dl class="grid gap-2 text-xs">
         <div>
@@ -562,13 +562,13 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Page Referrer -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="page-referrer" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Page Referrer</h3>
       <p class="text-xs text-slate-200">{{ props.pageReferrer || 'None' }}</p>
     </section>
 
     <!-- Private Browsing -->
-    <section v-if="props.privateBrowsingMode !== null" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="private-browsing" v-if="props.privateBrowsingMode !== null" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Private Browsing Mode</h3>
       <p class="text-xs font-medium" :class="props.privateBrowsingMode ? 'text-yellow-300' : 'text-slate-200'">
         {{ props.privateBrowsingMode ? 'Yes' : 'No' }}
@@ -576,7 +576,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Keys Pressed -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="keys-pressed" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Keys Pressed (Live)</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div>
@@ -591,7 +591,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Mouse Position -->
-    <section class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="mouse-position" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Mouse Position (Live)</h3>
       <dl class="grid gap-2 text-xs sm:grid-cols-2">
         <div v-if="props.mousePosition">
@@ -606,7 +606,7 @@ function formatBatteryTime(seconds: number | null): string {
     </section>
 
     <!-- Scroll Position -->
-    <section v-if="props.scrollPosition" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+    <section id="scroll-position" v-if="props.scrollPosition" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
       <h3 class="mb-3 text-sm font-semibold text-slate-200">Page Current Scroll Position (Live)</h3>
       <p class="text-xs text-slate-200">X: {{ props.scrollPosition.x }}, Y: {{ props.scrollPosition.y }}</p>
     </section>

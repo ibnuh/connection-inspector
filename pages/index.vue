@@ -1686,8 +1686,12 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-6">
+    <!-- Table of Contents Sidebar -->
+    <TableOfContents />
+
     <!-- Top summary (IP + quick browser summary) -->
-    <ConnectionOverview
+    <section id="connection-overview">
+      <ConnectionOverview
       :loading-ip="loadingIp"
       :ip-info="ipInfo"
       :ip-error="ipError"
@@ -1731,27 +1735,31 @@ onMounted(() => {
       :copy-summary-to-clipboard="copySummaryToClipboard"
       :download-snapshot-json="downloadSnapshotJson"
       :copy-debug-snippet="copyDebugSnippet"
-    />
+      />
+    </section>
 
     <!-- Detailed sections -->
     <section class="grid gap-4 md:grid-cols-2">
       <!-- Network / IP details -->
-      <NetworkIpDetails
-        :loading-ip="loadingIp"
-        :ip-info="ipInfo"
-        :connection-type="connectionType"
-        :connection-downlink="connectionDownlink"
-        :connection-rtt="connectionRtt"
-        :connection-save-data="connectionSaveData"
-        :reverse-dns-loading="reverseDnsLoading"
-        :reverse-dns-error="reverseDnsError"
-        :reverse-dns-hostnames="reverseDnsHostnames"
-        :fetch-ip-info="fetchIpInfo"
-        :run-reverse-dns-lookup="runReverseDnsLookup"
-      />
+      <div id="network-ip-details">
+        <NetworkIpDetails
+          :loading-ip="loadingIp"
+          :ip-info="ipInfo"
+          :connection-type="connectionType"
+          :connection-downlink="connectionDownlink"
+          :connection-rtt="connectionRtt"
+          :connection-save-data="connectionSaveData"
+          :reverse-dns-loading="reverseDnsLoading"
+          :reverse-dns-error="reverseDnsError"
+          :reverse-dns-hostnames="reverseDnsHostnames"
+          :fetch-ip-info="fetchIpInfo"
+          :run-reverse-dns-lookup="runReverseDnsLookup"
+        />
+      </div>
 
       <!-- Screen & device details -->
-      <ScreenDeviceDetails
+      <div id="screen-device-details">
+        <ScreenDeviceDetails
         :screen-width="screenWidth"
         :screen-height="screenHeight"
         :device-pixel-ratio="devicePixelRatio"
@@ -1771,7 +1779,8 @@ onMounted(() => {
         :fingerprint-band="fingerprintBand"
         :fingerprint-score="fingerprintScore"
         :log-diagnostics-to-console="logDiagnosticsToConsole"
-      />
+        />
+      </div>
     </section>
 
     <!-- Extended Browser & Device Information -->
