@@ -79,6 +79,22 @@ type IpApiResponse = {
   client_rtt_ms?: number
 }
 
+interface DnsQueryResult {
+  domain: string
+  ip: string | null
+  error?: string
+}
+
+interface DnsLeakResult {
+  ok: boolean
+  queries: DnsQueryResult[]
+  systemDnsServers: string[]
+  leakDetected: boolean
+  resolverCount: number
+  note?: string
+  error?: string
+}
+
 const props = defineProps<{
   loadingIp: boolean
   ipInfo: IpApiResponse | null
@@ -89,8 +105,12 @@ const props = defineProps<{
   reverseDnsLoading: boolean
   reverseDnsError: string | null
   reverseDnsHostnames: string[] | null
+  dnsLeakLoading: boolean
+  dnsLeakError: string | null
+  dnsLeakResult: DnsLeakResult | null
   fetchIpInfo: () => Promise<void> | void
   runReverseDnsLookup: () => Promise<void> | void
+  runDnsLeakTest: () => Promise<void> | void
 }>()
 
 </script>
@@ -140,6 +160,12 @@ const props = defineProps<{
         :reverse-dns-error="props.reverseDnsError"
         :reverse-dns-hostnames="props.reverseDnsHostnames"
         :run-reverse-dns-lookup="props.runReverseDnsLookup"
+      />
+      <DnsLeakTest
+        :dns-leak-loading="props.dnsLeakLoading"
+        :dns-leak-error="props.dnsLeakError"
+        :dns-leak-result="props.dnsLeakResult"
+        :run-dns-leak-test="props.runDnsLeakTest"
       />
       <RawIpPayload :ip-info="props.ipInfo" />
     </dl>

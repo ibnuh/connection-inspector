@@ -166,6 +166,28 @@ const reverseDnsError = ref<string | null>(null)
 const reverseDnsHostnames = ref<string[] | null>(null)
 const reverseDnsResolver = ref<string>('')
 
+// DNS Leak Test
+type DnsQueryResult = {
+  domain: string
+  ip: string | null
+  error?: string
+}
+
+type DnsLeakResult = {
+  ok: boolean
+  queries: DnsQueryResult[]
+  systemDnsServers: string[]
+  leakDetected: boolean
+  resolverCount: number
+  note?: string
+  error?: string
+}
+
+const dnsLeakLoading = ref(false)
+const dnsLeakError = ref<string | null>(null)
+const dnsLeakResult = ref<DnsLeakResult | null>(null)
+const dnsLeakTestCount = ref(10)
+
 // Privacy / fingerprint hints
 const privacyNotes = computed(() => {
   const notes: string[] = []
@@ -774,6 +796,31 @@ async function runReverseDnsLookup() {
     reverseDnsError.value = (err as Error).message || 'Reverse DNS lookup failed.'
   } finally {
     reverseDnsLoading.value = false
+  }
+}
+
+async function runDnsLeakTest(count?: number) {
+  dnsLeakError.value = null
+  dnsLeakResult.value = null
+  dnsLeakLoading.value = true
+  try {
+    const testCount = count ?? dnsLeakTestCount.value
+    const res = await $fetch<DnsLeakResult>('/api/dns-leak', {
+      params: {
+        count: testCount
+      }
+    })
+
+    if (!res.ok) {
+      dnsLeakError.value = res.error || 'DNS leak test failed.'
+      return
+    }
+
+    dnsLeakResult.value = res
+  } catch (err) {
+    dnsLeakError.value = (err as Error).message || 'DNS leak test failed.'
+  } finally {
+    dnsLeakLoading.value = false
   }
 }
 
@@ -1775,8 +1822,12 @@ onMounted(() => {
           :reverse-dns-loading="reverseDnsLoading"
           :reverse-dns-error="reverseDnsError"
           :reverse-dns-hostnames="reverseDnsHostnames"
+          :dns-leak-loading="dnsLeakLoading"
+          :dns-leak-error="dnsLeakError"
+          :dns-leak-result="dnsLeakResult"
           :fetch-ip-info="fetchIpInfo"
           :run-reverse-dns-lookup="runReverseDnsLookup"
+          :run-dns-leak-test="runDnsLeakTest"
         />
       </div>
 
