@@ -8,6 +8,9 @@ export default defineNuxtConfig({
   },
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/tailwind.css'],
+  nitro: {
+    preset: 'cloudflare-pages'
+  },
   app: {
     head: {
       title: 'Connection Inspector',

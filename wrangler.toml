@@ -1,0 +1,25 @@
+# Cloudflare Pages configuration file
+# This file is optional but can be useful for local development and manual deployments
+# Most settings are configured through the Cloudflare Pages dashboard
+
+name = "connection-inspector"
+compatibility_date = "2024-01-01"
+
+# Pages configuration
+pages_build_output_dir = ".output/public"
+
+# Environment variables (if needed)
+# [vars]
+# EXAMPLE_VAR = "example-value"
+
+# Build configuration
+# These are typically set in the Cloudflare Pages dashboard, but can be specified here
+# build_command = "npm run build"
+# build_output_dir = ".output/public"
+
+# Note: For Cloudflare Pages, most configuration is done through the dashboard.
+# This file is primarily useful for:
+# - Local development with Wrangler
+# - Manual deployments
+# - CI/CD pipelines
+

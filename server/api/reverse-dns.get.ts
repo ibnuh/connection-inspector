@@ -1,5 +1,56 @@
 import { defineEventHandler, getQuery, getRequestIP } from 'h3'
-import { Resolver, promises as dns } from 'node:dns'
+
+// Cloudflare Workers-compatible reverse DNS lookup using DNS over HTTPS
+async function reverseDnsLookup(ip: string, resolver?: string): Promise<string[]> {
+  // Use Cloudflare's DNS over HTTPS API or Google's public DNS
+  const dnsServer = resolver || '1.1.1.1'
+  
+  // Convert IP to reverse DNS format (e.g., 1.2.3.4 -> 4.3.2.1.in-addr.arpa)
+  const parts = ip.split('.').reverse()
+  const reverseDomain = parts.join('.') + '.in-addr.arpa'
+  
+  // Use Cloudflare's DNS over HTTPS API
+  const dohUrl = `https://cloudflare-dns.com/dns-query?name=${reverseDomain}&type=PTR`
+  
+  try {
+    const response = await fetch(dohUrl, {
+      headers: {
+        'Accept': 'application/dns-json'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`DNS query failed: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    
+    if (data.Answer && data.Answer.length > 0) {
+      return data.Answer
+        .filter((record: any) => record.type === 12) // PTR record type
+        .map((record: any) => record.data.replace(/\.$/, '')) // Remove trailing dot
+    }
+    
+    return []
+  } catch (error) {
+    // Fallback: try using a simpler approach with a public DNS API
+    try {
+      const fallbackUrl = `https://dns.google/resolve?name=${reverseDomain}&type=PTR`
+      const fallbackResponse = await fetch(fallbackUrl)
+      const fallbackData = await fallbackResponse.json()
+      
+      if (fallbackData.Answer && fallbackData.Answer.length > 0) {
+        return fallbackData.Answer
+          .filter((record: any) => record.type === 12)
+          .map((record: any) => record.data.replace(/\.$/, ''))
+      }
+    } catch {
+      // Ignore fallback errors
+    }
+    
+    throw error
+  }
+}
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -20,21 +71,19 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  try {
-    let hostnames: string[]
-
-    if (resolverParam) {
-      const resolver = new Resolver()
-      resolver.setServers([resolverParam])
-      hostnames = await new Promise<string[]>((resolve, reject) => {
-        resolver.reverse(ip, (err, records) => {
-          if (err) return reject(err)
-          resolve(records)
-        })
-      })
-    } else {
-      hostnames = await dns.reverse(ip)
+  // Validate IP format
+  const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/
+  if (!ipRegex.test(ip)) {
+    return {
+      ok: false,
+      ip,
+      resolver: resolverParam || null,
+      error: 'Invalid IP address format.'
     }
+  }
+
+  try {
+    const hostnames = await reverseDnsLookup(ip, resolverParam || undefined)
 
     return {
       ok: true,
