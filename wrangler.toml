@@ -6,7 +6,9 @@ name = "connection-inspector"
 compatibility_date = "2024-01-01"
 
 # Pages configuration
-pages_build_output_dir = ".output/public"
+# Note: For cloudflare-pages preset, Nitro outputs to 'dist' directory
+# The pages_build_output_dir setting is overridden by Nitro and will be ignored
+pages_build_output_dir = "dist"
 
 # Environment variables (if needed)
 # [vars]

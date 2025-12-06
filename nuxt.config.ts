@@ -9,7 +9,10 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/tailwind.css'],
   nitro: {
-    preset: 'cloudflare-pages'
+    preset: process.env.NITRO_PRESET || 'cloudflare-pages',
+    prerender: {
+      crawlLinks: false
+    }
   },
   app: {
     head: {
