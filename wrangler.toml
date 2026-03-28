@@ -2,7 +2,7 @@
 # This file is optional but can be useful for local development and manual deployments
 # Most settings are configured through the Cloudflare Pages dashboard
 
-name = "connection-inspector"
+name = "whoami"
 compatibility_date = "2024-01-01"
 
 # Pages configuration
