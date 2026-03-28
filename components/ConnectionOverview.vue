@@ -131,7 +131,7 @@ const props = defineProps<{
   requestClipboardReadPermission: () => void
   runServerViewCheck: () => Promise<void> | void
   copySummaryToClipboard: () => Promise<void> | void
-  downloadSnapshotJson: () => void
+  downloadSnapshot: (format: 'json' | 'csv' | 'markdown') => void
   copyDebugSnippet: () => Promise<void> | void
   connectionType: string | null
   connectionRtt: number | null
@@ -276,7 +276,7 @@ const props = defineProps<{
       :copy-summary-status="props.copySummaryStatus"
       :copy-debug-status="props.copyDebugStatus"
       :copy-summary-to-clipboard="props.copySummaryToClipboard"
-      :download-snapshot-json="props.downloadSnapshotJson"
+      :download-snapshot="props.downloadSnapshot"
       :copy-debug-snippet="props.copyDebugSnippet"
     />
   </section>
