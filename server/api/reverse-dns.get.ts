@@ -71,9 +71,14 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Validate IP format
-  const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/
-  if (!ipRegex.test(ip)) {
+  // Validate IP format (IPv4 or IPv6)
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
+  const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,7}:$|^([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}$|^([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}$|^([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}$|^([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}$|^[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})$|^:((:[0-9a-fA-F]{1,4}){1,7}|:)$/
+  
+  const isIPv4 = ipv4Regex.test(ip)
+  const isIPv6 = ipv6Regex.test(ip)
+  
+  if (!isIPv4 && !isIPv6) {
     return {
       ok: false,
       ip,

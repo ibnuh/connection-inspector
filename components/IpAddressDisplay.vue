@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 type LocationInfo = {
   city?: string
   state?: string
@@ -15,6 +17,29 @@ const props = defineProps<{
   loadingIp: boolean
   ipInfo: IpApiResponse | null
 }>()
+
+const locationDisplay = computed(() => {
+  if (!props.ipInfo?.location) {
+    return null
+  }
+  
+  const { city, state, country, country_code } = props.ipInfo.location
+  
+  // Build location parts, filtering out empty/null values
+  const parts: string[] = []
+  if (city) parts.push(city)
+  if (state) parts.push(state)
+  if (country) parts.push(country)
+  
+  if (parts.length === 0) {
+    return null
+  }
+  
+  const locationString = parts.join(', ')
+  const countryCode = country_code ? ` (${country_code})` : ''
+  
+  return locationString + countryCode
+})
 </script>
 
 <template>
@@ -32,11 +57,8 @@ const props = defineProps<{
         Unknown
       </span>
     </p>
-    <p v-if="props.ipInfo?.location" class="mt-1 text-xs text-slate-400">
-      {{ props.ipInfo.location.city }},
-      {{ props.ipInfo.location.state }},
-      {{ props.ipInfo.location.country }}
-      ({{ props.ipInfo.location.country_code }})
+    <p v-if="locationDisplay" class="mt-1 text-xs text-slate-400">
+      {{ locationDisplay }}
     </p>
     <p v-else class="mt-1 text-xs text-slate-500">
       Location details may be approximate.
