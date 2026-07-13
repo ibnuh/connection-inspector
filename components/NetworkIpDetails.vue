@@ -36,31 +36,33 @@
     <div
       class="grid gap-2 rounded-xl border border-slate-800/80 bg-slate-950/50 p-3 text-xs text-slate-300 sm:grid-cols-2"
     >
-      <div>
+      <div class="min-w-0">
         <dt class="text-[0.7rem] text-slate-500">Connection type</dt>
-        <dd class="mt-0.5 font-medium">{{ storage.connectionType.value ?? 'Unknown' }}</dd>
+        <dd class="mt-0.5 break-words font-medium">
+          {{ storage.connectionType.value ?? 'Unknown' }}
+        </dd>
       </div>
-      <div>
+      <div class="min-w-0">
         <dt class="text-[0.7rem] text-slate-500">Downlink</dt>
-        <dd class="mt-0.5 font-medium">
+        <dd class="mt-0.5 break-words font-medium tabular-nums">
           <template v-if="storage.connectionDownlink.value != null">
-            {{ storage.connectionDownlink.value }} Mbps
+            {{ Number(storage.connectionDownlink.value.toFixed(2)) }} Mbps
           </template>
           <template v-else>Unknown</template>
         </dd>
       </div>
-      <div>
+      <div class="min-w-0">
         <dt class="text-[0.7rem] text-slate-500">RTT</dt>
-        <dd class="mt-0.5 font-medium">
+        <dd class="mt-0.5 break-words font-medium tabular-nums">
           <template v-if="storage.connectionRtt.value != null">
-            {{ storage.connectionRtt.value }} ms
+            {{ Math.round(storage.connectionRtt.value) }} ms
           </template>
           <template v-else>Unknown</template>
         </dd>
       </div>
-      <div>
+      <div class="min-w-0">
         <dt class="text-[0.7rem] text-slate-500">Save-Data</dt>
-        <dd class="mt-0.5 font-medium">
+        <dd class="mt-0.5 break-words font-medium">
           <template v-if="storage.connectionSaveData.value == null">Unknown</template>
           <template v-else>{{ storage.connectionSaveData.value ? 'On' : 'Off' }}</template>
         </dd>

@@ -1,45 +1,48 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+  import { computed, ref } from 'vue'
+  import { formatDevicePixelRatio } from '@/utils/format'
 
-const props = defineProps<{
-  browserName: string | null
-  browserVersion: string | null
-  browserEngine: string | null
-  platform: string | null
-  screenWidth: number | null
-  screenHeight: number | null
-  devicePixelRatio: number | null
-  hardwareConcurrency: number | null
-  timezone: string | null
-  languages: string[]
-  cookiesEnabled: boolean | null
-  doNotTrack: string | null
-  online: boolean | null
-  userAgent: string | null
-}>()
+  const props = defineProps<{
+    browserName: string | null
+    browserVersion: string | null
+    browserEngine: string | null
+    platform: string | null
+    screenWidth: number | null
+    screenHeight: number | null
+    devicePixelRatio: number | null
+    hardwareConcurrency: number | null
+    timezone: string | null
+    languages: string[]
+    cookiesEnabled: boolean | null
+    doNotTrack: string | null
+    online: boolean | null
+    userAgent: string | null
+  }>()
 
-const showUserAgent = ref(false)
+  const showUserAgent = ref(false)
 
-const browserDisplay = computed(() => {
-  if (props.browserName && props.browserVersion) {
-    return `${props.browserName} ${props.browserVersion}`
-  }
-  return 'Unknown Browser'
-})
+  const browserDisplay = computed(() => {
+    if (props.browserName && props.browserVersion) {
+      return `${props.browserName} ${props.browserVersion}`
+    }
+    return 'Unknown Browser'
+  })
 
-const screenDisplay = computed(() => {
-  if (props.screenWidth && props.screenHeight) {
-    return `${props.screenWidth} × ${props.screenHeight}`
-  }
-  return 'Unknown'
-})
+  const screenDisplay = computed(() => {
+    if (props.screenWidth && props.screenHeight) {
+      return `${props.screenWidth} × ${props.screenHeight}`
+    }
+    return 'Unknown'
+  })
 
-const languageDisplay = computed(() => {
-  if (props.languages.length > 0) {
-    return props.languages[0].split('-')[0].toUpperCase()
-  }
-  return 'Unknown'
-})
+  const pixelRatioDisplay = computed(() => formatDevicePixelRatio(props.devicePixelRatio))
+
+  const languageDisplay = computed(() => {
+    if (props.languages.length > 0) {
+      return props.languages[0].split('-')[0].toUpperCase()
+    }
+    return 'Unknown'
+  })
 </script>
 
 <template>
@@ -78,7 +81,7 @@ const languageDisplay = computed(() => {
       </button>
       <div
         v-if="showUserAgent"
-        class="rounded-lg bg-slate-900/80 p-3 font-mono text-[0.7rem] leading-relaxed text-slate-300"
+        class="break-all rounded-lg bg-slate-900/80 p-3 font-mono text-[0.7rem] leading-relaxed text-slate-300"
       >
         {{ props.userAgent }}
       </div>
@@ -86,37 +89,33 @@ const languageDisplay = computed(() => {
 
     <!-- Quick Info Grid -->
     <dl class="grid grid-cols-2 gap-3">
-      <!-- Platform -->
-      <div class="rounded-lg bg-slate-900/60 px-3 py-2">
+      <div class="min-w-0 rounded-lg bg-slate-900/60 px-3 py-2">
         <dt class="text-[0.7rem] text-slate-400">Platform</dt>
-        <dd class="mt-1 text-sm font-medium text-slate-200">
+        <dd class="mt-1 break-words text-sm font-medium text-slate-200">
           {{ props.platform || 'Unknown' }}
         </dd>
       </div>
 
-      <!-- Screen -->
-      <div class="rounded-lg bg-slate-900/60 px-3 py-2">
+      <div class="min-w-0 rounded-lg bg-slate-900/60 px-3 py-2">
         <dt class="text-[0.7rem] text-slate-400">Screen</dt>
-        <dd class="mt-1 text-sm font-medium text-slate-200">
+        <dd class="mt-1 break-words text-sm font-medium tabular-nums text-slate-200">
           {{ screenDisplay }}
-          <span v-if="props.devicePixelRatio" class="text-xs text-slate-400">
-            @ {{ props.devicePixelRatio }}x
+          <span v-if="props.devicePixelRatio != null" class="text-xs text-slate-400">
+            @ {{ pixelRatioDisplay }}×
           </span>
         </dd>
       </div>
 
-      <!-- CPU Cores -->
-      <div v-if="props.hardwareConcurrency" class="rounded-lg bg-slate-900/60 px-3 py-2">
+      <div v-if="props.hardwareConcurrency" class="min-w-0 rounded-lg bg-slate-900/60 px-3 py-2">
         <dt class="text-[0.7rem] text-slate-400">CPU Cores</dt>
-        <dd class="mt-1 text-sm font-medium text-slate-200">
+        <dd class="mt-1 break-words text-sm font-medium tabular-nums text-slate-200">
           {{ props.hardwareConcurrency }}
         </dd>
       </div>
 
-      <!-- Language -->
-      <div class="rounded-lg bg-slate-900/60 px-3 py-2">
+      <div class="min-w-0 rounded-lg bg-slate-900/60 px-3 py-2">
         <dt class="text-[0.7rem] text-slate-400">Language</dt>
-        <dd class="mt-1 text-sm font-medium text-slate-200">
+        <dd class="mt-1 break-words text-sm font-medium text-slate-200">
           {{ languageDisplay }}
         </dd>
       </div>
@@ -126,9 +125,16 @@ const languageDisplay = computed(() => {
     <div class="flex flex-wrap gap-2">
       <div
         class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs"
-        :class="props.cookiesEnabled ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'"
+        :class="
+          props.cookiesEnabled
+            ? 'bg-emerald-500/20 text-emerald-300'
+            : 'bg-slate-800 text-slate-400'
+        "
       >
-        <span class="h-1.5 w-1.5 rounded-full" :class="props.cookiesEnabled ? 'bg-emerald-400' : 'bg-slate-600'" />
+        <span
+          class="h-1.5 w-1.5 rounded-full"
+          :class="props.cookiesEnabled ? 'bg-emerald-400' : 'bg-slate-600'"
+        />
         Cookies {{ props.cookiesEnabled ? 'On' : 'Off' }}
       </div>
       <div
@@ -148,4 +154,3 @@ const languageDisplay = computed(() => {
     </div>
   </div>
 </template>
-

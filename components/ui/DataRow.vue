@@ -31,14 +31,14 @@
 
 <template>
   <div :class="['flex items-start justify-between gap-2 py-1', props.class]">
-    <div class="min-w-0">
+    <div class="min-w-0 shrink-0 max-w-[40%]">
       <dt class="text-xs text-slate-400">{{ props.label }}</dt>
       <p v-if="props.hint" class="mt-0.5 text-[0.65rem] text-slate-600">{{ props.hint }}</p>
     </div>
     <dd
       :class="[
-        'mt-0.5 max-w-[60%] break-words text-right text-xs font-medium text-slate-200',
-        props.mono ? 'font-mono' : ''
+        'mt-0.5 min-w-0 max-w-[60%] break-words text-right text-xs font-medium text-slate-200',
+        props.mono ? 'font-mono break-all' : ''
       ]"
     >
       <button
