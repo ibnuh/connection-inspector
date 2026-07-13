@@ -44,7 +44,9 @@
 
       <ConnectionStatus
         :online="browser.online.value"
-        :connection-type="storage.connectionType.value"
+        :connection-transport="storage.connectionTransport.value"
+        :connection-effective-type="storage.connectionEffectiveType.value"
+        :connection-type="storage.connectionEffectiveType.value"
         :connection-rtt="storage.connectionRtt.value"
         :connection-downlink="storage.connectionDownlink.value"
         :connection-save-data="storage.connectionSaveData.value"

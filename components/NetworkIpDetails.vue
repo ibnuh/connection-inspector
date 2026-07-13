@@ -1,7 +1,17 @@
 <script setup lang="ts">
+  import { computed } from 'vue'
   import { useInspector } from '@/composables/useInspector'
+  import { formatConnectionTransport, formatEffectiveType } from '@/utils/connection'
+  import { formatMbps, formatMs } from '@/utils/format'
 
   const { ip, storage } = useInspector()
+
+  const transportLabel = computed(() =>
+    formatConnectionTransport(storage.connectionTransport.value)
+  )
+  const effectiveLabel = computed(() => formatEffectiveType(storage.connectionEffectiveType.value))
+  const downlinkLabel = computed(() => formatMbps(storage.connectionDownlink.value))
+  const rttLabel = computed(() => formatMs(storage.connectionRtt.value))
 </script>
 
 <template>
@@ -37,28 +47,20 @@
       class="grid gap-2 rounded-xl border border-slate-800/80 bg-slate-950/50 p-3 text-xs text-slate-300 sm:grid-cols-2"
     >
       <div class="min-w-0">
-        <dt class="text-[0.7rem] text-slate-500">Connection type</dt>
-        <dd class="mt-0.5 break-words font-medium">
-          {{ storage.connectionType.value ?? 'Unknown' }}
-        </dd>
+        <dt class="text-[0.7rem] text-slate-500">Transport</dt>
+        <dd class="mt-0.5 break-words font-medium">{{ transportLabel }}</dd>
+      </div>
+      <div class="min-w-0">
+        <dt class="text-[0.7rem] text-slate-500">Effective speed class</dt>
+        <dd class="mt-0.5 break-words font-medium">{{ effectiveLabel }}</dd>
       </div>
       <div class="min-w-0">
         <dt class="text-[0.7rem] text-slate-500">Downlink</dt>
-        <dd class="mt-0.5 break-words font-medium tabular-nums">
-          <template v-if="storage.connectionDownlink.value != null">
-            {{ Number(storage.connectionDownlink.value.toFixed(2)) }} Mbps
-          </template>
-          <template v-else>Unknown</template>
-        </dd>
+        <dd class="mt-0.5 break-words font-medium tabular-nums">{{ downlinkLabel }}</dd>
       </div>
       <div class="min-w-0">
         <dt class="text-[0.7rem] text-slate-500">RTT</dt>
-        <dd class="mt-0.5 break-words font-medium tabular-nums">
-          <template v-if="storage.connectionRtt.value != null">
-            {{ Math.round(storage.connectionRtt.value) }} ms
-          </template>
-          <template v-else>Unknown</template>
-        </dd>
+        <dd class="mt-0.5 break-words font-medium tabular-nums">{{ rttLabel }}</dd>
       </div>
       <div class="min-w-0">
         <dt class="text-[0.7rem] text-slate-500">Save-Data</dt>

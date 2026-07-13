@@ -9,6 +9,11 @@ export function useStorageAndConnection() {
   const storageQuota = ref<number | null>(null)
   const storageUsage = ref<number | null>(null)
 
+  /** navigator.connection.type — wifi / ethernet / cellular / … */
+  const connectionTransport = ref<string | null>(null)
+  /** navigator.connection.effectiveType — performance class only (not radio). */
+  const connectionEffectiveType = ref<string | null>(null)
+  /** @deprecated alias of effectiveType kept for older UI bindings during transition */
   const connectionType = ref<string | null>(null)
   const connectionDownlink = ref<number | null>(null)
   const connectionRtt = ref<number | null>(null)
@@ -39,7 +44,8 @@ export function useStorageAndConnection() {
   }))
 
   const connectionInfo = computed<ConnectionInfo>(() => ({
-    type: connectionType.value,
+    type: connectionTransport.value,
+    effectiveType: connectionEffectiveType.value,
     downlink: connectionDownlink.value,
     rtt: connectionRtt.value,
     saveData: connectionSaveData.value
@@ -101,6 +107,7 @@ export function useStorageAndConnection() {
 
   function detectConnection() {
     type AnyConnection = {
+      type?: string
       effectiveType?: string
       downlink?: number
       rtt?: number
@@ -123,6 +130,8 @@ export function useStorageAndConnection() {
     connectionApiAvailable.value = !!connection
 
     if (!connection) {
+      connectionTransport.value = null
+      connectionEffectiveType.value = null
       connectionType.value = null
       connectionDownlink.value = null
       connectionRtt.value = null
@@ -131,7 +140,22 @@ export function useStorageAndConnection() {
     }
 
     const applyConnection = () => {
-      connectionType.value = connection.effectiveType ?? null
+      // Transport: wifi / ethernet / cellular — only when the engine exposes it
+      const transport =
+        typeof connection.type === 'string' && connection.type.trim()
+          ? connection.type.trim().toLowerCase()
+          : null
+      connectionTransport.value = transport
+
+      // effectiveType is a throughput/latency *class*, not "you are on 4G radio"
+      const effective =
+        typeof connection.effectiveType === 'string' && connection.effectiveType.trim()
+          ? connection.effectiveType.trim().toLowerCase()
+          : null
+      connectionEffectiveType.value = effective
+      // Legacy field: keep effectiveType for callers that still bind connectionType
+      connectionType.value = effective
+
       connectionDownlink.value =
         typeof connection.downlink === 'number' ? connection.downlink : null
       connectionRtt.value = typeof connection.rtt === 'number' ? connection.rtt : null
@@ -281,6 +305,8 @@ export function useStorageAndConnection() {
     sessionStorageEnabled,
     storageQuota,
     storageUsage,
+    connectionTransport,
+    connectionEffectiveType,
     connectionType,
     connectionDownlink,
     connectionRtt,

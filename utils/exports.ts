@@ -63,7 +63,15 @@ export function downloadCsv(data: ConnectionSnapshot, filename?: string): void {
         : 'Unknown'
     ],
     ['Risk', 'Score', data.risk.score?.toString() ?? 'Unknown'],
-    ['Risk', 'Band', data.risk.band ?? 'Unknown']
+    ['Risk', 'Band', data.risk.band ?? 'Unknown'],
+    ['Connection', 'Transport', data.connection.type ?? 'Unknown'],
+    ['Connection', 'Effective Type', data.connection.effectiveType ?? 'Unknown'],
+    [
+      'Connection',
+      'Downlink Mbps',
+      data.connection.downlink != null ? String(data.connection.downlink) : 'Unknown'
+    ],
+    ['Connection', 'RTT ms', data.connection.rtt != null ? String(data.connection.rtt) : 'Unknown']
   ]
 
   const csvContent = rows

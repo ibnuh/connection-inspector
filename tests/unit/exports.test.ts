@@ -69,7 +69,8 @@ describe('exports utilities', () => {
           isFullscreen: false
         },
         connection: {
-          type: '4g',
+          effectiveType: '4g',
+          type: 'wifi',
           downlink: 10,
           rtt: 50,
           saveData: false
@@ -289,6 +290,7 @@ describe('exports utilities', () => {
           isFullscreen: null
         },
         connection: {
+          effectiveType: '4g',
           type: null,
           downlink: null,
           rtt: null,
@@ -518,6 +520,7 @@ describe('exports utilities', () => {
           isFullscreen: false
         },
         connection: {
+          effectiveType: '4g',
           type: null,
           downlink: null,
           rtt: null,

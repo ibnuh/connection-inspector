@@ -121,9 +121,18 @@ export interface WindowInfo {
   isFullscreen: boolean | null
 }
 
-// Connection types
+// Connection types (Network Information API)
 export interface ConnectionInfo {
+  /**
+   * Physical/logical transport: wifi, ethernet, cellular, etc.
+   * From navigator.connection.type when available.
+   */
   type: string | null
+  /**
+   * Performance class: slow-2g | 2g | 3g | 4g.
+   * This is NOT the radio technology; browsers often report "4g" on fast Wi‑Fi.
+   */
+  effectiveType: string | null
   downlink: number | null
   rtt: number | null
   saveData: boolean | null
