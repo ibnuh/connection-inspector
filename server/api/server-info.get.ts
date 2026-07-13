@@ -1,13 +1,17 @@
 import { defineEventHandler, getRequestIP } from 'h3'
 
-export default defineEventHandler((event) => {
+/**
+ * Returns what the edge sees for this request.
+ * On Cloudflare Pages, getRequestIP with xForwardedFor trusts platform-forwarded headers.
+ */
+export default defineEventHandler(event => {
   const { headers, httpVersion, socket } = event.node.req
 
-  // Best-effort IP detection: trust X-Forwarded-For when present, otherwise fall back to socket address.
-  const headerIp =
-    getRequestIP(event, { xForwardedFor: true }) ||
-    null
-  const socketIp = (socket as any)?.remoteAddress ?? null
+  const headerIp = getRequestIP(event, { xForwardedFor: true }) || null
+  const socketIp =
+    socket && typeof socket === 'object' && 'remoteAddress' in socket
+      ? ((socket as { remoteAddress?: string }).remoteAddress ?? null)
+      : null
 
   return {
     ip: headerIp || socketIp,
@@ -19,6 +23,3 @@ export default defineEventHandler((event) => {
     }
   }
 })
-
-
-

@@ -1,15 +1,12 @@
 <script setup lang="ts">
-type IpApiResponse = {
-  is_datacenter?: boolean
-  is_mobile?: boolean
-}
+  import type { IpApiResponse } from '@/types'
 
-const props = defineProps<{
-  ipInfo: IpApiResponse | null
-  ipStatusLabel: string
-  ipStatusTone: 'success' | 'warning' | 'danger' | 'neutral'
-  isHttps: boolean
-}>()
+  const props = defineProps<{
+    ipInfo: IpApiResponse | null
+    ipStatusLabel: string
+    ipStatusTone: 'success' | 'warning' | 'danger' | 'neutral'
+    isHttps: boolean
+  }>()
 </script>
 
 <template>
@@ -17,7 +14,8 @@ const props = defineProps<{
     <span
       class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.7rem] font-medium"
       :class="[
-        props.ipStatusTone === 'success' && 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
+        props.ipStatusTone === 'success' &&
+          'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
         props.ipStatusTone === 'warning' && 'border-amber-500/40 bg-amber-500/10 text-amber-300',
         props.ipStatusTone === 'danger' && 'border-rose-500/40 bg-rose-500/10 text-rose-300',
         props.ipStatusTone === 'neutral' && 'border-slate-700 bg-slate-800 text-slate-300'
@@ -54,4 +52,3 @@ const props = defineProps<{
     </span>
   </div>
 </template>
-

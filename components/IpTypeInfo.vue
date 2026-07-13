@@ -1,16 +1,9 @@
 <script setup lang="ts">
-type IpApiResponse = {
-  is_datacenter?: boolean
-  is_mobile?: boolean
-  is_bogon?: boolean
-  is_proxy?: boolean
-  is_vpn?: boolean
-  is_tor?: boolean
-}
+  import type { IpApiResponse } from '@/types'
 
-const props = defineProps<{
-  ipInfo: IpApiResponse | null
-}>()
+  const props = defineProps<{
+    ipInfo: IpApiResponse | null
+  }>()
 </script>
 
 <template>
@@ -24,9 +17,7 @@ const props = defineProps<{
           <span v-else>Residential or unknown</span>
           <span v-if="props.ipInfo.is_bogon"> • Bogon/invalid range</span>
         </span>
-        <span v-else>
-          Waiting for IP data&hellip;
-        </span>
+        <span v-else> Waiting for IP data&hellip; </span>
       </dd>
     </div>
     <div class="text-right text-[0.7rem] text-slate-400">
@@ -51,4 +42,3 @@ const props = defineProps<{
     </div>
   </div>
 </template>
-

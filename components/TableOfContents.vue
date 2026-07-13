@@ -1,127 +1,123 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+  import { onMounted, onUnmounted, ref } from 'vue'
 
-const activeSection = ref<string | null>(null)
-const sections = ref<{ id: string; label: string }[]>([])
+  const activeSection = ref<string | null>('connection-overview')
+  const mobileOpen = ref(false)
 
-const headings = [
-  { id: 'connection-overview', label: 'Connection Overview' },
-  { id: 'network-ip-details', label: 'Network & IP Details' },
-  { id: 'screen-device-details', label: 'Screen & Device Details' },
-  { id: 'device-type', label: 'Device Type / Model' },
-  { id: 'operating-system', label: 'Operating System' },
-  { id: 'browser', label: 'Browser' },
-  { id: 'date-time', label: 'Date & Time' },
-  { id: 'fingerprinting-resistance', label: 'Fingerprinting Resistance' },
-  { id: 'http-headers', label: 'HTTP Request Headers' },
-  { id: 'browser-window', label: 'Browser Window Size' },
-  { id: 'screen', label: 'Screen' },
-  { id: 'battery-status', label: 'Battery Status' },
-  { id: 'bluetooth', label: 'Bluetooth' },
-  { id: 'device-orientation', label: 'Device Orientation' },
-  { id: 'device-pointing', label: 'Device Pointing Method' },
-  { id: 'speakers', label: 'Speakers' },
-  { id: 'microphones', label: 'Microphones' },
-  { id: 'cameras', label: 'Cameras' },
-  { id: 'browser-plugins', label: 'Browser Plugins' },
-  { id: 'mime-types', label: 'Browser MIME Types' },
-  { id: 'content-filtering', label: 'Content Filtering' },
-  { id: 'tls-ssl', label: 'TLS / SSL' },
-  { id: 'webgl', label: 'WebGL' },
-  { id: 'speech-synthesis', label: 'SpeechSynthesis' },
-  { id: 'fonts', label: 'Fonts' },
-  { id: 'page-visibility', label: 'Page Visibility' },
-  { id: 'performance', label: 'Performance' },
-  { id: 'websocket', label: 'WebSocket' },
-  { id: 'storage', label: 'Storage' },
-  { id: 'history', label: 'History' },
-  { id: 'page-referrer', label: 'Page Referrer' },
-  { id: 'private-browsing', label: 'Private Browsing' },
-  { id: 'keys-pressed', label: 'Keys Pressed' },
-  { id: 'mouse-position', label: 'Mouse Position' },
-  { id: 'scroll-position', label: 'Scroll Position' }
-]
+  const groups = [
+    {
+      label: 'Start',
+      items: [
+        { id: 'connection-overview', label: 'Overview' },
+        { id: 'network-ip-details', label: 'Network and IP' },
+        { id: 'screen-device-details', label: 'Screen and device' }
+      ]
+    },
+    {
+      label: 'Privacy and network',
+      items: [
+        { id: 'webrtc-leak', label: 'WebRTC exposure' },
+        { id: 'network-probes', label: 'Connectivity probes' },
+        { id: 'dns-leak-test', label: 'DNS resolvers' }
+      ]
+    },
+    {
+      label: 'Details',
+      items: [{ id: 'detail-sections', label: 'Deep dive groups' }]
+    }
+  ]
 
-function scrollToSection(id: string) {
-  const element = document.getElementById(id)
-  if (element) {
-    const offset = 80 // Account for any fixed headers
+  const flatItems = groups.flatMap(g => g.items)
+
+  function scrollToSection(id: string) {
+    const element = document.getElementById(id)
+    if (!element) {
+      return
+    }
+    const offset = 80
     const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-    const offsetPosition = elementPosition - offset
-
     window.scrollTo({
-      top: offsetPosition,
+      top: elementPosition - offset,
       behavior: 'smooth'
     })
+    activeSection.value = id
+    mobileOpen.value = false
   }
-}
 
-function updateActiveSection() {
-  const scrollPosition = window.scrollY + 150 // Offset for better detection
+  function updateActiveSection() {
+    const scrollPosition = window.scrollY + 150
+    let current: string | null = flatItems[0]?.id ?? null
 
-  // Check which sections are visible
-  let currentSection: string | null = null
-  
-  for (let i = headings.length - 1; i >= 0; i--) {
-    const element = document.getElementById(headings[i].id)
-    if (element) {
-      const elementTop = element.offsetTop
-      const elementBottom = elementTop + element.offsetHeight
-      
-      // Check if section is in viewport
-      if (scrollPosition >= elementTop && scrollPosition < elementBottom) {
-        currentSection = headings[i].id
-        break
+    for (const item of flatItems) {
+      const element = document.getElementById(item.id)
+      if (!element) {
+        continue
       }
-      // Also check if we've scrolled past this section
-      if (scrollPosition >= elementTop) {
-        currentSection = headings[i].id
-        break
+      if (element.offsetTop <= scrollPosition) {
+        current = item.id
       }
     }
+
+    activeSection.value = current
   }
-  
-  activeSection.value = currentSection
-}
 
-onMounted(() => {
-  sections.value = headings
-  updateActiveSection()
-  window.addEventListener('scroll', updateActiveSection)
-})
+  onMounted(() => {
+    window.addEventListener('scroll', updateActiveSection, { passive: true })
+    updateActiveSection()
+  })
 
-onUnmounted(() => {
-  window.removeEventListener('scroll', updateActiveSection)
-})
+  onUnmounted(() => {
+    window.removeEventListener('scroll', updateActiveSection)
+  })
 </script>
 
 <template>
+  <!-- Mobile jump nav -->
+  <div class="lg:hidden">
+    <label for="section-jump" class="sr-only">Jump to section</label>
+    <div class="flex gap-2">
+      <select
+        id="section-jump"
+        class="w-full rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-xs text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+        :value="activeSection || ''"
+        @change="scrollToSection(($event.target as HTMLSelectElement).value)"
+      >
+        <optgroup v-for="group in groups" :key="group.label" :label="group.label">
+          <option v-for="item in group.items" :key="item.id" :value="item.id">
+            {{ item.label }}
+          </option>
+        </optgroup>
+      </select>
+    </div>
+  </div>
+
+  <!-- Desktop sticky nav -->
   <nav
-    class="fixed left-4 top-1/2 z-50 hidden -translate-y-1/2 transform lg:block"
-    style="max-height: calc(100vh - 2rem)"
+    class="fixed left-4 top-1/2 z-40 hidden max-h-[70vh] w-44 -translate-y-1/2 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/90 p-3 shadow-soft backdrop-blur lg:block"
+    aria-label="On this page"
   >
-    <div class="w-48 rounded-lg border border-slate-800 bg-slate-900/95 p-3 shadow-lg backdrop-blur">
-      <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-        Contents
-      </h3>
-      <ul class="space-y-1 overflow-y-auto" style="max-height: calc(100vh - 8rem)">
-        <li v-for="section in sections" :key="section.id">
+    <p class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">
+      On this page
+    </p>
+    <div v-for="group in groups" :key="group.label" class="mb-3 last:mb-0">
+      <p class="mb-1 text-[0.6rem] uppercase tracking-wide text-slate-600">{{ group.label }}</p>
+      <ul class="space-y-0.5">
+        <li v-for="item in group.items" :key="item.id">
           <button
-            :id="`toc-${section.id}`"
             type="button"
-            class="w-full text-left text-xs transition-colors hover:text-emerald-300"
+            class="w-full rounded-lg px-2 py-1 text-left text-[0.7rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             :class="
-              activeSection === section.id
-                ? 'font-semibold text-emerald-400'
-                : 'text-slate-400'
+              activeSection === item.id
+                ? 'bg-sky-500/15 font-medium text-sky-300'
+                : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
             "
-            @click="scrollToSection(section.id)"
+            :aria-current="activeSection === item.id ? 'location' : undefined"
+            @click="scrollToSection(item.id)"
           >
-            <span class="block truncate whitespace-nowrap">{{ section.label }}</span>
+            {{ item.label }}
           </button>
         </li>
       </ul>
     </div>
   </nav>
 </template>
-

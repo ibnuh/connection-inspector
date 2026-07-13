@@ -27,9 +27,7 @@
     ]
   },
   "dependencies": {
-    "lucide-vue-next": "^0.474.0",
     "nuxt": "^3.13.0",
-    "shadcn-vue": "^0.10.0",
     "vue": "^3.5.0"
   },
   "devDependencies": {
@@ -39,7 +37,6 @@
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^4.1.2",
     "@vue/test-utils": "^2.4.6",
-    "@vueuse/core": "^11.0.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^9.0.0",
@@ -50,6 +47,7 @@
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.57.2",
     "vitest": "^4.1.2",
-    "vue-tsc": "^2.0.0"
+    "vue-tsc": "^2.0.0",
+    "wrangler": "^4.110.0"
   }
 }

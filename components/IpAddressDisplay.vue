@@ -1,45 +1,34 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+  import { computed } from 'vue'
+  import type { IpApiResponse } from '@/types'
 
-type LocationInfo = {
-  city?: string
-  state?: string
-  country?: string
-  country_code?: string
-}
+  const props = defineProps<{
+    loadingIp: boolean
+    ipInfo: IpApiResponse | null
+  }>()
 
-type IpApiResponse = {
-  ip?: string
-  location?: LocationInfo
-}
+  const locationDisplay = computed(() => {
+    if (!props.ipInfo?.location) {
+      return null
+    }
 
-const props = defineProps<{
-  loadingIp: boolean
-  ipInfo: IpApiResponse | null
-}>()
+    const { city, state, country, country_code } = props.ipInfo.location
 
-const locationDisplay = computed(() => {
-  if (!props.ipInfo?.location) {
-    return null
-  }
-  
-  const { city, state, country, country_code } = props.ipInfo.location
-  
-  // Build location parts, filtering out empty/null values
-  const parts: string[] = []
-  if (city) parts.push(city)
-  if (state) parts.push(state)
-  if (country) parts.push(country)
-  
-  if (parts.length === 0) {
-    return null
-  }
-  
-  const locationString = parts.join(', ')
-  const countryCode = country_code ? ` (${country_code})` : ''
-  
-  return locationString + countryCode
-})
+    // Build location parts, filtering out empty/null values
+    const parts: string[] = []
+    if (city) parts.push(city)
+    if (state) parts.push(state)
+    if (country) parts.push(country)
+
+    if (parts.length === 0) {
+      return null
+    }
+
+    const locationString = parts.join(', ')
+    const countryCode = country_code ? ` (${country_code})` : ''
+
+    return locationString + countryCode
+  })
 </script>
 
 <template>
@@ -53,16 +42,11 @@ const locationDisplay = computed(() => {
       <span v-else-if="props.ipInfo">
         {{ props.ipInfo.ip }}
       </span>
-      <span v-else class="text-slate-500">
-        Unknown
-      </span>
+      <span v-else class="text-slate-500"> Unknown </span>
     </p>
     <p v-if="locationDisplay" class="mt-1 text-xs text-slate-400">
       {{ locationDisplay }}
     </p>
-    <p v-else class="mt-1 text-xs text-slate-500">
-      Location details may be approximate.
-    </p>
+    <p v-else class="mt-1 text-xs text-slate-500">Location details may be approximate.</p>
   </div>
 </template>
-

@@ -5,11 +5,12 @@ A comprehensive, mobile-friendly tool that displays detailed information about y
 ## Tech Stack
 
 - **Nuxt 3** with **TypeScript** (strict mode)
-- **Vue 3** Composition API
-- **Tailwind CSS** with shadcn-style design system
+- **Vue 3** Composition API with a shared `useInspector` provide/inject context
+- **Tailwind CSS** with small shared UI primitives (`DataCard`, `DataRow`, `StatusBadge`)
 - **Vitest** for unit testing
 - **Playwright** for E2E testing
 - **ESLint + Prettier** for code quality
+- Deploy target: **Cloudflare Pages** (`nitro.preset: cloudflare-pages`)
 
 ## Development
 
@@ -65,34 +66,45 @@ npm run typecheck
 ## Project Structure
 
 ```
-├── components/          # Vue components
-│   └── ui/             # Reusable UI components
-├── composables/        # Vue composables (reusable logic)
-├── layouts/            # Nuxt layouts
-├── pages/              # Nuxt pages
-├── server/             # API routes (Nitro)
-├── types/              # Centralized TypeScript types
-├── utils/              # Utility functions
-└── tests/              # Test files
-    ├── unit/           # Unit tests for composables/utils
-    ├── components/     # Component tests
-    └── e2e/            # E2E tests
+├── components/          # Vue components (overview + detail sections)
+│   └── ui/              # Reusable UI primitives
+├── composables/         # Detection logic + useInspector context
+├── layouts/             # App chrome
+├── pages/               # Routes (single home page)
+├── server/              # Nitro API routes (edge helpers)
+│   ├── api/
+│   └── utils/
+├── types/               # Shared TypeScript types
+├── utils/               # Pure helpers (IP, exports)
+└── tests/
+    ├── unit/
+    └── e2e/
 ```
 
 ## Features
 
-- **IP & Network**: IP detection, geolocation, ISP info, VPN/proxy detection
-- **Browser Info**: Browser name/version, OS, screen details, WebGL GPU info
-- **Privacy Analysis**: Canvas fingerprinting, audio fingerprinting, entropy scoring
-- **Device Info**: Hardware concurrency, battery status, device orientation
-- **Permissions**: Camera, microphone, geolocation, notification permissions
-- **Real-time**: Battery level, mouse position, scroll tracking, connection status
+- **IP and network**: IP detection, geolocation, ISP/ASN, risk scoring, reverse DNS, server-view compare
+- **Browser info**: Browser name/version, OS, screen details, WebGL GPU info
+- **Privacy analysis**: Canvas/audio fingerprinting, entropy-style privacy score, WebRTC ICE exposure
+- **Connectivity probes**: Network Information API, WebSocket probe, best-effort IPv6 reachability
+- **Device info**: Hardware concurrency, battery, orientation, preferences
+- **Permissions**: Camera, microphone, geolocation, notification permissions (on demand)
+- **Export**: JSON, CSV, Markdown, debug snippet
+- **DNS resolvers**: Assisted resolver metadata (honestly labeled; not a full leak lab)
+
+## Architecture notes
+
+- `provideInspector()` on the home page creates one shared detection context.
+- Section components call `useInspector()` instead of receiving dozens of props.
+- Critical detection runs on mount; heavier probes (WebRTC, WebSocket, IPv6) are deferred via idle scheduling.
+- Edge routes validate input and bound proxy payloads.
 
 ## Pre-commit Hooks
 
-This project uses Husky and lint-staged to ensure code quality. Before each commit:
-- ESLint fixes any auto-fixable issues
-- Prettier formats all supported files
+This project uses Husky and lint-staged. Before each commit:
+
+- ESLint fixes auto-fixable issues
+- Prettier formats supported files
 
 ## Deployment
 
@@ -104,4 +116,4 @@ MIT
 
 ---
 
-**Note**: All detection is performed client-side in your browser. No personal data is stored on any server.
+**Note**: Detection runs in your browser. Edge helpers only echo request metadata and proxy DNS lookups. No personal data is stored on the server.

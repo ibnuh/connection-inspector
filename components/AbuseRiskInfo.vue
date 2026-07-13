@@ -1,32 +1,20 @@
 <script setup lang="ts">
-type CompanyInfo = {
-  abuser_score?: unknown
-}
+  import type { IpApiResponse } from '@/types'
 
-type AsnInfo = {
-  abuser_score?: unknown
-}
+  const props = defineProps<{
+    ipInfo: IpApiResponse | null
+  }>()
 
-type IpApiResponse = {
-  is_abuser?: boolean
-  asn?: AsnInfo
-  company?: CompanyInfo
-}
-
-const props = defineProps<{
-  ipInfo: IpApiResponse | null
-}>()
-
-function formatAbuserScore(score: unknown): string {
-  if (score == null) return 'Unknown'
-  if (typeof score === 'number') return score.toString()
-  if (typeof score === 'string') return score
-  try {
-    return JSON.stringify(score)
-  } catch {
-    return 'Unknown'
+  function formatAbuserScore(score: unknown): string {
+    if (score == null) return 'Unknown'
+    if (typeof score === 'number') return score.toString()
+    if (typeof score === 'string') return score
+    try {
+      return JSON.stringify(score)
+    } catch {
+      return 'Unknown'
+    }
   }
-}
 </script>
 
 <template>
@@ -38,12 +26,11 @@ function formatAbuserScore(score: unknown): string {
           Marked as abusive &mdash; this IP or network has elevated abuse reports.
         </span>
         <span v-else>
-          Not flagged as abusive by ipapi.is, but other providers may still enforce their own checks.
+          Not flagged as abusive by ipapi.is, but other providers may still enforce their own
+          checks.
         </span>
       </span>
-      <span v-else>
-        Waiting for IP data&hellip;
-      </span>
+      <span v-else> Waiting for IP data&hellip; </span>
     </dd>
     <dd v-if="props.ipInfo?.asn || props.ipInfo?.company" class="text-[0.7rem] text-slate-500">
       Abuse scores (ASN / company):
@@ -54,4 +41,3 @@ function formatAbuserScore(score: unknown): string {
     </dd>
   </div>
 </template>
-

@@ -1,12 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import {
-  copyTextToClipboard,
-  downloadJson,
-  downloadCsv,
-  generateMarkdown,
-  buildDebugSnippet,
-  type ExportFormat
-} from '@/utils/exports'
+import { describe, it, expect } from 'vitest'
+import { copyTextToClipboard, generateMarkdown, buildDebugSnippet } from '@/utils/exports'
 import type { ConnectionSnapshot } from '@/types'
 
 describe('exports utilities', () => {
@@ -16,7 +9,7 @@ describe('exports utilities', () => {
       expect(typeof copyTextToClipboard).toBe('function')
     })
   })
-  
+
   describe('generateMarkdown', () => {
     it('should generate markdown with all basic sections', () => {
       const mockSnapshot: ConnectionSnapshot = {
@@ -230,13 +223,22 @@ describe('exports utilities', () => {
           canShare: true,
           shareDataTypes: ['text/plain', 'text/url']
         },
+        tls: {
+          version: 'HTTPS (TLS details not exposed to page JavaScript)',
+          cipher: null
+        },
+        pageVisibility: {
+          initiallyVisible: true,
+          lastVisible: null,
+          lastHidden: null
+        },
         meta: {
           generatedAt: '2024-01-01T00:00:00.000Z'
         }
       }
-      
+
       const markdown = generateMarkdown(mockSnapshot)
-      
+
       expect(markdown).toContain('# Connection Inspector Report')
       expect(markdown).toContain('## Network & IP')
       expect(markdown).toContain('## Browser')
@@ -245,7 +247,7 @@ describe('exports utilities', () => {
       expect(markdown).toContain('**Name:** Chrome')
       expect(markdown).toContain('**OS:** Windows 10')
     })
-    
+
     it('should handle null values gracefully', () => {
       const mockSnapshot: ConnectionSnapshot = {
         ip: null,
@@ -432,17 +434,26 @@ describe('exports utilities', () => {
           canShare: null,
           shareDataTypes: []
         },
+        tls: {
+          version: null,
+          cipher: null
+        },
+        pageVisibility: {
+          initiallyVisible: null,
+          lastVisible: null,
+          lastHidden: null
+        },
         meta: {
           generatedAt: '2024-01-01T00:00:00.000Z'
         }
       }
-      
+
       const markdown = generateMarkdown(mockSnapshot)
-      
+
       expect(markdown).toContain('Unknown')
     })
   })
-  
+
   describe('buildDebugSnippet', () => {
     it('should build debug snippet with IP info', () => {
       const mockSnapshot: ConnectionSnapshot = {
@@ -652,13 +663,22 @@ describe('exports utilities', () => {
           canShare: true,
           shareDataTypes: ['text/plain', 'text/url']
         },
+        tls: {
+          version: 'HTTPS (TLS details not exposed to page JavaScript)',
+          cipher: null
+        },
+        pageVisibility: {
+          initiallyVisible: true,
+          lastVisible: null,
+          lastHidden: null
+        },
         meta: {
           generatedAt: '2024-01-01T00:00:00.000Z'
         }
       }
-      
+
       const snippet = buildDebugSnippet(mockSnapshot)
-      
+
       expect(snippet).toContain('IP: 1.2.3.4')
       expect(snippet).toContain('AS123')
       expect(snippet).toContain('Test ISP')

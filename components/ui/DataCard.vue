@@ -1,20 +1,25 @@
 <script setup lang="ts">
-const props = defineProps<{
-  title?: string
-  description?: string
-  loading?: boolean
-  class?: string
-}>()
+  const props = defineProps<{
+    id?: string
+    title?: string
+    description?: string
+    loading?: boolean
+    class?: string
+  }>()
 </script>
 
 <template>
   <div
+    :id="props.id"
     :class="[
       'flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-soft',
       props.class
     ]"
   >
-    <div v-if="props.title || props.description || props.loading" class="flex items-center justify-between gap-2">
+    <div
+      v-if="props.title || props.description || props.loading"
+      class="flex items-center justify-between gap-2"
+    >
       <div>
         <h2 v-if="props.title" class="text-sm font-semibold text-slate-100">
           {{ props.title }}

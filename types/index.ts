@@ -300,6 +300,18 @@ export interface ServerViewData {
 // Privacy types
 export type PrivacyProfile = 'Low' | 'Medium' | 'High' | 'Unknown'
 
+// DNS resolver info (assisted leak / resolver listing)
+export interface DnsServerInfo {
+  ip_address: string
+  hostname: string | null
+  isp: string
+  organization: string
+  country: string
+  country_code: string
+  city: string
+  dnssec: boolean
+}
+
 // WebRTC leak test types
 export interface WebRTCIceCandidate {
   address: string
@@ -312,7 +324,10 @@ export interface WebRTCLeakInfo {
   localIps: string[]
   publicIps: string[]
   hasLeak: boolean | null
+  hasLocalExposure: boolean | null
+  hasPublicMismatch: boolean | null
   candidateCount: number
+  egressIp: string | null
 }
 
 // WebSocket connectivity types
@@ -462,6 +477,8 @@ export interface ConnectionSnapshot {
   extendedScreen: ExtendedScreenInfo
   userPreferences: UserPreferences
   shareApi: ShareApiInfo
+  tls: TlsInfo
+  pageVisibility: PageVisibilityInfo
   meta: {
     generatedAt: string
   }

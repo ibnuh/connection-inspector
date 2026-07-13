@@ -1,25 +1,15 @@
 <script setup lang="ts">
-type IpApiResponse = {
-  ip?: string
-}
+  import type { IpApiResponse, ServerViewData } from '@/types'
 
-const props = defineProps<{
-  serverViewLoading: boolean
-  serverViewError: string | null
-  serverViewData: {
-    ip: string | null
-    httpVersion?: string
-    headers?: {
-      'user-agent'?: string
-      'accept-language'?: string
-      'x-forwarded-for'?: string | string[]
-    }
-  } | null
-  ipInfo: IpApiResponse | null
-  userAgent: string | null
-  isHttps: boolean
-  runServerViewCheck: () => Promise<void> | void
-}>()
+  const props = defineProps<{
+    serverViewLoading: boolean
+    serverViewError: string | null
+    serverViewData: ServerViewData | null
+    ipInfo: IpApiResponse | null
+    userAgent: string | null
+    isHttps: boolean
+    runServerViewCheck: () => Promise<void> | void
+  }>()
 </script>
 
 <template>
@@ -44,16 +34,10 @@ const props = defineProps<{
         <span>{{ props.serverViewLoading ? 'Checking…' : 'Run check' }}</span>
       </button>
     </div>
-    <p
-      v-if="props.serverViewError"
-      class="mt-1 text-[0.7rem] text-rose-400"
-    >
+    <p v-if="props.serverViewError" class="mt-1 text-[0.7rem] text-rose-400">
       {{ props.serverViewError }}
     </p>
-    <div
-      v-if="props.serverViewData"
-      class="mt-1 space-y-0.5 text-[0.7rem]"
-    >
+    <div v-if="props.serverViewData" class="mt-1 space-y-0.5 text-[0.7rem]">
       <p class="text-slate-300">
         Server IP:
         <span class="font-medium">
@@ -65,15 +49,16 @@ const props = defineProps<{
             {{ props.ipInfo.ip }}
           </span>
           <span
-            v-if="props.serverViewData.ip && props.ipInfo.ip && props.serverViewData.ip === props.ipInfo.ip"
+            v-if="
+              props.serverViewData.ip &&
+              props.ipInfo.ip &&
+              props.serverViewData.ip === props.ipInfo.ip
+            "
             class="ml-1 text-emerald-400"
           >
             (match)
           </span>
-          <span
-            v-else-if="props.serverViewData.ip && props.ipInfo.ip"
-            class="ml-1 text-amber-300"
-          >
+          <span v-else-if="props.serverViewData.ip && props.ipInfo.ip" class="ml-1 text-amber-300">
             (mismatch &mdash; proxy or VPN likely)
           </span>
         </span>
@@ -97,11 +82,18 @@ const props = defineProps<{
       <p
         v-if="props.userAgent && props.serverViewData.headers?.['user-agent']"
         class="text-[0.65rem]"
-        :class="props.serverViewData.headers['user-agent'] === props.userAgent ? 'text-emerald-400' : 'text-amber-300'"
+        :class="
+          props.serverViewData.headers['user-agent'] === props.userAgent
+            ? 'text-emerald-400'
+            : 'text-amber-300'
+        "
       >
-        {{ props.serverViewData.headers['user-agent'] === props.userAgent ? 'Server UA matches navigator.userAgent.' : 'Server UA differs from navigator.userAgent (proxy, sanitizer or middleware may be rewriting headers).' }}
+        {{
+          props.serverViewData.headers['user-agent'] === props.userAgent
+            ? 'Server UA matches navigator.userAgent.'
+            : 'Server UA differs from navigator.userAgent (proxy, sanitizer or middleware may be rewriting headers).'
+        }}
       </p>
     </div>
   </div>
 </template>
-

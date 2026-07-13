@@ -1,149 +1,79 @@
 <script setup lang="ts">
-type AbuseContact = {
-  name?: string
-  address?: string
-  email?: string
-  phone?: string
-}
+  import { useInspector } from '@/composables/useInspector'
 
-type DatacenterInfo = {
-  datacenter?: string
-  network?: string
-  country?: string
-  region?: string
-  city?: string
-}
-
-type CompanyInfo = {
-  name?: string
-  abuser_score?: unknown
-  domain?: string
-  type?: string
-  network?: string
-  whois?: string
-}
-
-type AsnInfo = {
-  asn?: number
-  abuser_score?: unknown
-  route?: string
-  descr?: string
-  country?: string
-  active?: boolean
-  org?: string
-  domain?: string
-  abuse?: string
-  type?: string
-  created?: string
-  updated?: string
-  rir?: string
-  whois?: string
-}
-
-type LocationInfo = {
-  is_eu_member?: boolean
-  calling_code?: string
-  currency_code?: string
-  continent?: string
-  country?: string
-  country_code?: string
-  state?: string
-  city?: string
-  latitude?: number
-  longitude?: number
-  zip?: string
-  timezone?: string
-  local_time?: string
-  local_time_unix?: number
-  is_dst?: boolean
-}
-
-type IpApiResponse = {
-  ip?: string
-  rir?: string
-  is_bogon?: boolean
-  is_mobile?: boolean
-  is_satellite?: boolean
-  is_crawler?: boolean
-  is_datacenter?: boolean
-  is_tor?: boolean
-  is_proxy?: boolean
-  is_vpn?: boolean
-  is_abuser?: boolean
-  datacenter?: DatacenterInfo
-  company?: CompanyInfo
-  abuse?: AbuseContact
-  asn?: AsnInfo
-  location?: LocationInfo
-  elapsed_ms?: number
-  client_rtt_ms?: number
-}
-
-const props = defineProps<{
-  loadingIp: boolean
-  ipInfo: IpApiResponse | null
-  connectionType: string | null
-  connectionDownlink: number | null
-  connectionRtt: number | null
-  connectionSaveData: boolean | null
-  reverseDnsLoading: boolean
-  reverseDnsError: string | null
-  reverseDnsHostnames: string[] | null
-  fetchIpInfo: () => Promise<void> | void
-  runReverseDnsLookup: () => Promise<void> | void
-}>()
-
+  const { ip, storage } = useInspector()
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-soft">
+  <div
+    id="network-ip-details"
+    class="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-soft"
+  >
     <div class="flex items-center justify-between gap-2">
       <div>
-        <h2 class="text-sm font-semibold text-slate-100">
-          Network & IP details
-        </h2>
-        <p class="text-xs text-slate-400">
-          Enriched data from
-          <a
-            href="https://api.ipapi.is/"
-            target="_blank"
-            rel="noreferrer"
-            class="font-medium text-sky-400 underline-offset-4 hover:underline"
-          >
-            ipapi.is
-          </a>
-        </p>
+        <h2 class="text-sm font-semibold text-slate-100">Network and IP details</h2>
+        <p class="text-xs text-slate-400">Provider, ASN, risk flags, and reverse DNS.</p>
       </div>
       <button
         type="button"
-        class="inline-flex items-center rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[0.7rem] font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800 active:bg-slate-700"
-        @click="props.fetchIpInfo"
+        class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1 text-[0.7rem] font-medium text-slate-200 hover:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+        :disabled="ip.loadingIp.value"
+        @click="ip.fetchIpInfo()"
       >
-        <span v-if="props.loadingIp" class="mr-1.5 h-1.5 w-1.5 animate-ping rounded-full bg-sky-400" />
+        <span
+          class="h-1.5 w-1.5 rounded-full"
+          :class="ip.loadingIp.value ? 'animate-ping bg-sky-400' : 'bg-slate-500'"
+        />
         Refresh
       </button>
     </div>
 
-    <dl class="mt-2 space-y-2 text-xs">
-      <IpTypeInfo :ip-info="props.ipInfo" />
-      <BrowserConnection
-        :connection-type="props.connectionType"
-        :connection-downlink="props.connectionDownlink"
-        :connection-rtt="props.connectionRtt"
-        :connection-save-data="props.connectionSaveData"
-      />
-      <AbuseRiskInfo :ip-info="props.ipInfo" />
-      <ProviderAsnInfo :ip-info="props.ipInfo" />
-      <AbuseContactLocation :ip-info="props.ipInfo" />
-      <ReverseDnsLookup
-        :reverse-dns-loading="props.reverseDnsLoading"
-        :reverse-dns-error="props.reverseDnsError"
-        :reverse-dns-hostnames="props.reverseDnsHostnames"
-        :run-reverse-dns-lookup="props.runReverseDnsLookup"
-      />
-      <RawIpPayload :ip-info="props.ipInfo" />
-    </dl>
+    <IpTypeInfo :ip-info="ip.ipInfo.value" />
+    <ProviderAsnInfo :ip-info="ip.ipInfo.value" />
+    <AbuseRiskInfo :ip-info="ip.ipInfo.value" />
+    <AbuseContactLocation :ip-info="ip.ipInfo.value" />
+
+    <div
+      class="grid gap-2 rounded-xl border border-slate-800/80 bg-slate-950/50 p-3 text-xs text-slate-300 sm:grid-cols-2"
+    >
+      <div>
+        <dt class="text-[0.7rem] text-slate-500">Connection type</dt>
+        <dd class="mt-0.5 font-medium">{{ storage.connectionType.value ?? 'Unknown' }}</dd>
+      </div>
+      <div>
+        <dt class="text-[0.7rem] text-slate-500">Downlink</dt>
+        <dd class="mt-0.5 font-medium">
+          <template v-if="storage.connectionDownlink.value != null">
+            {{ storage.connectionDownlink.value }} Mbps
+          </template>
+          <template v-else>Unknown</template>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-[0.7rem] text-slate-500">RTT</dt>
+        <dd class="mt-0.5 font-medium">
+          <template v-if="storage.connectionRtt.value != null">
+            {{ storage.connectionRtt.value }} ms
+          </template>
+          <template v-else>Unknown</template>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-[0.7rem] text-slate-500">Save-Data</dt>
+        <dd class="mt-0.5 font-medium">
+          <template v-if="storage.connectionSaveData.value == null">Unknown</template>
+          <template v-else>{{ storage.connectionSaveData.value ? 'On' : 'Off' }}</template>
+        </dd>
+      </div>
+    </div>
+
+    <ReverseDnsLookup
+      :reverse-dns-loading="ip.reverseDnsLoading.value"
+      :reverse-dns-error="ip.reverseDnsError.value"
+      :reverse-dns-hostnames="ip.reverseDnsHostnames.value"
+      :run-reverse-dns-lookup="ip.runReverseDnsLookup"
+    />
+
+    <RawIpPayload :ip-info="ip.ipInfo.value" />
   </div>
 </template>
-
-

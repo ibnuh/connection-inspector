@@ -1,20 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+  import { ref } from 'vue'
+  import type { IpApiResponse } from '@/types'
 
-type IpApiResponse = Record<string, unknown>
+  const props = defineProps<{
+    ipInfo: IpApiResponse | null
+  }>()
 
-const props = defineProps<{
-  ipInfo: IpApiResponse | null
-}>()
-
-const showRawIpPayload = ref(false)
+  const showRawIpPayload = ref(false)
 </script>
 
 <template>
-  <div
-    v-if="props.ipInfo"
-    class="flex flex-col gap-1 rounded-lg bg-slate-950/60 px-3 py-2"
-  >
+  <div v-if="props.ipInfo" class="flex flex-col gap-1 rounded-lg bg-slate-950/60 px-3 py-2">
     <button
       type="button"
       class="inline-flex items-center justify-between gap-2 text-[0.7rem] font-medium text-slate-300"
@@ -31,9 +27,7 @@ const showRawIpPayload = ref(false)
     <pre
       v-if="showRawIpPayload"
       class="mt-1 max-h-52 overflow-auto rounded-md bg-slate-950 p-2 text-[0.65rem] leading-snug text-slate-300"
-    >
-{{ JSON.stringify(props.ipInfo, null, 2) }}
+      >{{ JSON.stringify(props.ipInfo, null, 2) }}
     </pre>
   </div>
 </template>
-
