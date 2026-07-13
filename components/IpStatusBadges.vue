@@ -34,19 +34,19 @@
     </span>
     <span
       v-if="props.ipInfo?.is_datacenter"
-      class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-[0.7rem] font-medium text-sky-300 ring-1 ring-sky-500/40"
+      class="inline-flex items-center rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-[0.7rem] font-medium text-sky-300"
     >
       Datacenter IP
     </span>
     <span
       v-if="props.ipInfo?.is_mobile"
-      class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[0.7rem] font-medium text-emerald-300 ring-1 ring-emerald-500/40"
+      class="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[0.7rem] font-medium text-emerald-300"
     >
       Mobile network
     </span>
     <span
       v-if="!props.isHttps"
-      class="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-1 text-[0.7rem] font-medium text-amber-300 ring-1 ring-amber-500/40"
+      class="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[0.7rem] font-medium text-amber-300"
     >
       Not using HTTPS
     </span>

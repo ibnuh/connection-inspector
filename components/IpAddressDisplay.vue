@@ -36,7 +36,7 @@
     <p class="text-xs font-semibold text-slate-400">IP address</p>
     <p class="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">
       <span v-if="props.loadingIp" class="inline-flex items-center gap-2 text-slate-400">
-        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
+        <span class="h-1.5 w-1.5 rounded-full bg-sky-400" />
         Detecting&hellip;
       </span>
       <span v-else-if="props.ipInfo">

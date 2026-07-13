@@ -19,7 +19,7 @@
 <template>
   <section
     id="connection-overview"
-    class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-soft backdrop-blur sm:grid-cols-2 sm:gap-6 sm:p-5"
+    class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:grid-cols-2 sm:gap-6 sm:p-5"
   >
     <div class="flex flex-col gap-3">
       <div

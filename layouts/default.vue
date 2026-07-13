@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-slate-50"
-  >
+  <div class="min-h-screen bg-slate-950 text-slate-50">
     <a
       href="#main-content"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-sky-600 focus:px-3 focus:py-2 focus:text-sm focus:text-white"
@@ -18,11 +16,9 @@
           </p>
         </div>
         <div
-          class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1 text-xs text-slate-300 shadow-soft backdrop-blur"
+          class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 px-3 py-1 text-xs text-slate-300"
         >
-          <span
-            class="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.35)] motion-reduce:shadow-none"
-          />
+          <span class="h-2 w-2 rounded-full bg-emerald-400" />
           <span>Client-side only · No data stored</span>
         </div>
       </header>

@@ -33,9 +33,6 @@ const config: Config = {
         lg: '0.5rem',
         md: '0.375rem',
         sm: '0.25rem'
-      },
-      boxShadow: {
-        soft: '0 18px 45px rgba(15, 23, 42, 0.65)'
       }
     }
   },
@@ -43,5 +40,3 @@ const config: Config = {
 }
 
 export default config
-
-

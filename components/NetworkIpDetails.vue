@@ -7,7 +7,7 @@
 <template>
   <div
     id="network-ip-details"
-    class="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-soft"
+    class="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
   >
     <div class="flex items-center justify-between gap-2">
       <div>
@@ -22,7 +22,7 @@
       >
         <span
           class="h-1.5 w-1.5 rounded-full"
-          :class="ip.loadingIp.value ? 'animate-ping bg-sky-400' : 'bg-slate-500'"
+          :class="ip.loadingIp.value ? 'bg-sky-400' : 'bg-slate-500'"
         />
         Refresh
       </button>

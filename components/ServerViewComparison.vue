@@ -27,10 +27,7 @@
         :disabled="props.serverViewLoading"
         @click="props.runServerViewCheck"
       >
-        <span
-          v-if="props.serverViewLoading"
-          class="h-1.5 w-1.5 animate-ping rounded-full bg-sky-400"
-        />
+        <span v-if="props.serverViewLoading" class="h-1.5 w-1.5 rounded-full bg-sky-400" />
         <span>{{ props.serverViewLoading ? 'Checking…' : 'Run check' }}</span>
       </button>
     </div>

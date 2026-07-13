@@ -7,7 +7,7 @@
 <template>
   <div
     id="screen-device-details"
-    class="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-soft"
+    class="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
   >
     <div class="flex items-center justify-between gap-2">
       <div>

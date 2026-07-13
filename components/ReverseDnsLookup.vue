@@ -1,10 +1,10 @@
 <script setup lang="ts">
-const props = defineProps<{
-  reverseDnsLoading: boolean
-  reverseDnsError: string | null
-  reverseDnsHostnames: string[] | null
-  runReverseDnsLookup: () => Promise<void> | void
-}>()
+  const props = defineProps<{
+    reverseDnsLoading: boolean
+    reverseDnsError: string | null
+    reverseDnsHostnames: string[] | null
+    runReverseDnsLookup: () => Promise<void> | void
+  }>()
 </script>
 
 <template>
@@ -17,10 +17,7 @@ const props = defineProps<{
         :disabled="props.reverseDnsLoading"
         @click="props.runReverseDnsLookup"
       >
-        <span
-          v-if="props.reverseDnsLoading"
-          class="h-1.5 w-1.5 animate-ping rounded-full bg-sky-400"
-        />
+        <span v-if="props.reverseDnsLoading" class="h-1.5 w-1.5 rounded-full bg-sky-400" />
         <span>{{ props.reverseDnsLoading ? 'Checking…' : 'Check DNS' }}</span>
       </button>
     </div>
@@ -37,10 +34,7 @@ const props = defineProps<{
           {{ props.reverseDnsHostnames.join(', ') }}
         </span>
       </span>
-      <span v-else>
-        Run a lookup to see PTR records (if any) for your current IP.
-      </span>
+      <span v-else> Run a lookup to see PTR records (if any) for your current IP. </span>
     </dd>
   </div>
 </template>
-

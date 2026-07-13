@@ -90,7 +90,7 @@
 
     <!-- Desktop in-flow sticky nav -->
     <nav
-      class="hidden max-h-[calc(100vh-3rem)] w-full overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/90 p-3 shadow-soft backdrop-blur lg:block"
+      class="hidden max-h-[calc(100vh-3rem)] w-full overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/90 p-3 lg:block"
       aria-label="On this page"
     >
       <p class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">

@@ -23,10 +23,7 @@
           :disabled="loading"
           @click="runDnsLeakTest"
         >
-          <span
-            v-if="loading"
-            class="mr-1.5 h-1.5 w-1.5 animate-ping rounded-full bg-sky-400 motion-reduce:animate-none"
-          />
+          <span v-if="loading" class="mr-1.5 h-1.5 w-1.5 rounded-full bg-sky-400" />
           {{ loading ? 'Looking up…' : 'Run resolver check' }}
         </button>
         <button
