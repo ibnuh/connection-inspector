@@ -2,7 +2,6 @@
   import { onMounted, onUnmounted, ref } from 'vue'
 
   const activeSection = ref<string | null>('connection-overview')
-  const mobileOpen = ref(false)
 
   const groups = [
     {
@@ -41,7 +40,6 @@
       behavior: 'smooth'
     })
     activeSection.value = id
-    mobileOpen.value = false
   }
 
   function updateActiveSection() {
@@ -72,10 +70,10 @@
 </script>
 
 <template>
-  <!-- Mobile jump nav -->
-  <div class="lg:hidden">
-    <label for="section-jump" class="sr-only">Jump to section</label>
-    <div class="flex gap-2">
+  <div class="lg:sticky lg:top-6 lg:self-start">
+    <!-- Mobile jump nav -->
+    <div class="lg:hidden">
+      <label for="section-jump" class="sr-only">Jump to section</label>
       <select
         id="section-jump"
         class="w-full rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-xs text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
@@ -89,35 +87,35 @@
         </optgroup>
       </select>
     </div>
-  </div>
 
-  <!-- Desktop sticky nav -->
-  <nav
-    class="fixed left-4 top-1/2 z-40 hidden max-h-[70vh] w-44 -translate-y-1/2 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/90 p-3 shadow-soft backdrop-blur lg:block"
-    aria-label="On this page"
-  >
-    <p class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">
-      On this page
-    </p>
-    <div v-for="group in groups" :key="group.label" class="mb-3 last:mb-0">
-      <p class="mb-1 text-[0.6rem] uppercase tracking-wide text-slate-600">{{ group.label }}</p>
-      <ul class="space-y-0.5">
-        <li v-for="item in group.items" :key="item.id">
-          <button
-            type="button"
-            class="w-full rounded-lg px-2 py-1 text-left text-[0.7rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-            :class="
-              activeSection === item.id
-                ? 'bg-sky-500/15 font-medium text-sky-300'
-                : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-            "
-            :aria-current="activeSection === item.id ? 'location' : undefined"
-            @click="scrollToSection(item.id)"
-          >
-            {{ item.label }}
-          </button>
-        </li>
-      </ul>
-    </div>
-  </nav>
+    <!-- Desktop in-flow sticky nav -->
+    <nav
+      class="hidden max-h-[calc(100vh-3rem)] w-full overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/90 p-3 shadow-soft backdrop-blur lg:block"
+      aria-label="On this page"
+    >
+      <p class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">
+        On this page
+      </p>
+      <div v-for="group in groups" :key="group.label" class="mb-3 last:mb-0">
+        <p class="mb-1 text-[0.6rem] uppercase tracking-wide text-slate-600">{{ group.label }}</p>
+        <ul class="space-y-0.5">
+          <li v-for="item in group.items" :key="item.id">
+            <button
+              type="button"
+              class="w-full rounded-lg px-2 py-1 text-left text-[0.7rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+              :class="
+                activeSection === item.id
+                  ? 'bg-sky-500/15 font-medium text-sky-300'
+                  : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+              "
+              :aria-current="activeSection === item.id ? 'location' : undefined"
+              @click="scrollToSection(item.id)"
+            >
+              {{ item.label }}
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </div>
 </template>

@@ -8,7 +8,7 @@
     >
       Skip to content
     </a>
-    <div class="mx-auto flex max-w-5xl flex-col gap-6 px-4 pb-10 pt-6 sm:px-6 lg:max-w-6xl lg:px-8">
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
       <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Connection Inspector</h1>
