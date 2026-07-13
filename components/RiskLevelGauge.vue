@@ -1,8 +1,8 @@
 <script setup lang="ts">
-const props = defineProps<{
-  ipRiskScore: number | null
-  ipRiskBand: 'Low' | 'Medium' | 'High' | 'Unknown'
-}>()
+  const props = defineProps<{
+    ipRiskScore: number | null
+    ipRiskBand: 'Low' | 'Medium' | 'High' | 'Unknown'
+  }>()
 </script>
 
 <template>
@@ -10,16 +10,12 @@ const props = defineProps<{
     <div class="flex items-center justify-between text-xs text-slate-300">
       <span class="font-medium">
         Risk level
-        <span v-if="props.ipRiskBand !== 'Unknown'">
-          ({{ props.ipRiskBand }})
-        </span>
+        <span v-if="props.ipRiskBand !== 'Unknown'"> ({{ props.ipRiskBand }}) </span>
       </span>
       <span v-if="props.ipRiskScore != null" class="tabular-nums text-slate-400">
         {{ props.ipRiskScore }} / 100
       </span>
-      <span v-else class="text-slate-500">
-        Not yet available
-      </span>
+      <span v-else class="text-slate-500"> Not yet available </span>
     </div>
     <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
       <div
@@ -35,9 +31,8 @@ const props = defineProps<{
       />
     </div>
     <p class="text-[0.7rem] text-slate-500">
-      Calculated from Tor / proxy / VPN flags, datacenter status, bogon range, and abuse scores from
-      ipapi.is.
+      Heuristic from ipapi.is flags: abuse listing, Tor, proxy, VPN, datacenter, bogon, and ASN /
+      company abuser scores. VPN alone is warning-level, not equivalent to abuse.
     </p>
   </div>
 </template>
-

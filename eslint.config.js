@@ -24,10 +24,19 @@ export default typescript.config(
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       'prefer-const': 'error',
       'no-var': 'error',
-      'eqeqeq': ['error', 'always', { null: 'ignore' }]
+      eqeqeq: ['error', 'always', { null: 'ignore' }]
     }
   },
   {
-    ignores: ['.nuxt/**', '.output/**', 'node_modules/**', 'coverage/**', 'playwright-report/**']
+    ignores: [
+      '.nuxt/**',
+      '.output/**',
+      'node_modules/**',
+      'coverage/**',
+      'playwright-report/**',
+      'dist/**',
+      '.wrangler/**',
+      '**/*.min.js'
+    ]
   }
 )

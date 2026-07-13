@@ -79,8 +79,8 @@
               </span>
             </p>
             <p class="text-[0.7rem] text-slate-500">
-              Uses a best-effort fetch to an IPv6-only host. Opaque cross-origin responses mean this
-              is only a weak signal, not a guaranteed lab test.
+              Image load against an IPv6-only host (ipv6.google.com). Low confidence: firewalls,
+              DNS, or image blocking can fail for reasons other than missing IPv6.
             </p>
           </dd>
         </div>

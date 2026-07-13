@@ -54,10 +54,20 @@
           <dt class="text-[0.7rem] text-slate-500">Exposure summary</dt>
           <dd class="mt-0.5 font-medium">
             <span v-if="webRTC.leakInfo.value.hasLeak === true" class="text-amber-300">
-              Exposure detected
+              <template v-if="webRTC.leakInfo.value.hasLocalExposure"
+                >Local network exposure</template
+              >
+              <template
+                v-if="
+                  webRTC.leakInfo.value.hasLocalExposure && webRTC.leakInfo.value.hasPublicMismatch
+                "
+              >
+                ·
+              </template>
+              <template v-if="webRTC.leakInfo.value.hasPublicMismatch">Public IP mismatch</template>
             </span>
             <span v-else-if="webRTC.leakInfo.value.hasLeak === false" class="text-emerald-300">
-              No local or mismatched public IPs
+              No local exposure or public mismatch
             </span>
             <span v-else class="text-slate-400">Not tested yet</span>
           </dd>
@@ -85,8 +95,9 @@
       </dl>
 
       <p class="text-[0.7rem] text-slate-500">
-        Local network IPs count as exposure. Public ICE addresses that differ from your egress IP
-        also count as a leak signal (for example when using a VPN that does not cover WebRTC).
+        Matching a public STUN address to your egress IP is normal. Exposure is flagged for private
+        / LAN addresses or when a public ICE IP differs from egress (for example a VPN that does not
+        cover WebRTC). mDNS hostnames are ignored.
       </p>
     </div>
   </DataCard>

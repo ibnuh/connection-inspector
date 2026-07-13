@@ -232,7 +232,10 @@ export function createInspector() {
     browser.detectAll()
     device.detectAll()
     permissions.detectAll()
-    fingerprinting.detectAll()
+    fingerprinting.detectAll({
+      doNotTrack: browser.doNotTrack.value,
+      cookiesEnabled: browser.cookiesEnabled.value
+    })
     realtime.detectAll()
     storage.detectStorage()
     storage.detectConnection()
@@ -276,6 +279,7 @@ export function createInspector() {
   function cleanup() {
     device.cleanup()
     realtime.cleanup()
+    storage.cleanup()
     if (onlineCleanup) {
       onlineCleanup()
       onlineCleanup = null

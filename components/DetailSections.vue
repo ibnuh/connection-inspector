@@ -190,6 +190,7 @@
             <DataRow
               label="Cipher suite"
               :value="device.tlsCipher.value || 'Not exposed to page JavaScript'"
+              hint="Browsers never reveal negotiated TLS version or ciphers to page scripts."
             />
           </DataCard>
         </template>

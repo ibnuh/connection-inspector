@@ -36,7 +36,14 @@ export function useIpData() {
       if (!res.ok) {
         throw new Error(`Request failed with status ${res.status}`)
       }
-      const data = (await res.json()) as IpApiResponse
+      const raw: unknown = await res.json()
+      if (!raw || typeof raw !== 'object') {
+        throw new Error('IP API returned an unexpected payload')
+      }
+      const data = raw as IpApiResponse
+      if (data.ip != null && typeof data.ip !== 'string') {
+        throw new Error('IP API payload missing a valid ip field')
+      }
       const end = performance.now()
       data.client_rtt_ms = Math.round(end - start)
       ipInfo.value = data

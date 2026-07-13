@@ -1,30 +1,36 @@
 import { ref, computed } from 'vue'
 import type { StorageInfo, ConnectionInfo, WebSocketConnectivity, IPv6Connectivity } from '@/types'
 
+const WS_ENDPOINTS = ['wss://echo.websocket.events', 'wss://ws.postman-echo.com/raw']
+
 export function useStorageAndConnection() {
-  // Storage state
   const localStorageEnabled = ref<boolean | null>(null)
   const sessionStorageEnabled = ref<boolean | null>(null)
   const storageQuota = ref<number | null>(null)
   const storageUsage = ref<number | null>(null)
 
-  // Connection state
   const connectionType = ref<string | null>(null)
   const connectionDownlink = ref<number | null>(null)
   const connectionRtt = ref<number | null>(null)
   const connectionSaveData = ref<boolean | null>(null)
+  const connectionApiAvailable = ref<boolean | null>(null)
 
-  // NEW: WebSocket connectivity
   const webSocketSupported = ref<boolean | null>(null)
   const webSocketCanConnect = ref<boolean | null>(null)
   const webSocketLatency = ref<number | null>(null)
   const webSocketError = ref<string | null>(null)
+  const webSocketEndpoint = ref<string | null>(null)
 
-  // NEW: IPv6 connectivity
   const ipv6Supported = ref<boolean | null>(null)
   const ipv6CanConnect = ref<boolean | null>(null)
+  const ipv6Confidence = ref<'high' | 'low' | 'none' | null>(null)
 
-  // Computed
+  let connectionChangeHandler: (() => void) | null = null
+  let connectionRef: {
+    addEventListener?: (type: string, listener: () => void) => void
+    removeEventListener?: (type: string, listener: () => void) => void
+  } | null = null
+
   const storageInfo = computed<StorageInfo>(() => ({
     localStorageEnabled: localStorageEnabled.value,
     sessionStorageEnabled: sessionStorageEnabled.value,
@@ -49,10 +55,9 @@ export function useStorageAndConnection() {
   const ipv6Connectivity = computed<IPv6Connectivity>(() => ({
     supported: ipv6Supported.value,
     canConnect: ipv6CanConnect.value,
-    testUrl: 'https://ipv6.google.com'
+    testUrl: 'https://ipv6.google.com/favicon.ico'
   }))
 
-  // Detection
   function detectStorage() {
     try {
       const key = '__connection_inspector_test__'
@@ -115,18 +120,37 @@ export function useStorageAndConnection() {
       navWithConnection.mozConnection ||
       navWithConnection.webkitConnection
 
+    connectionApiAvailable.value = !!connection
+
+    if (!connection) {
+      connectionType.value = null
+      connectionDownlink.value = null
+      connectionRtt.value = null
+      connectionSaveData.value = null
+      return
+    }
+
     const applyConnection = () => {
-      if (!connection) return
       connectionType.value = connection.effectiveType ?? null
-      connectionDownlink.value = connection.downlink ?? null
-      connectionRtt.value = connection.rtt ?? null
-      connectionSaveData.value = connection.saveData ?? null
+      connectionDownlink.value =
+        typeof connection.downlink === 'number' ? connection.downlink : null
+      connectionRtt.value = typeof connection.rtt === 'number' ? connection.rtt : null
+      connectionSaveData.value =
+        typeof connection.saveData === 'boolean' ? connection.saveData : null
     }
 
     applyConnection()
-    if (connection?.addEventListener) {
-      connection.addEventListener('change', applyConnection)
+    connectionRef = connection
+    connectionChangeHandler = applyConnection
+    connection.addEventListener?.('change', applyConnection)
+  }
+
+  function cleanup() {
+    if (connectionRef && connectionChangeHandler) {
+      connectionRef.removeEventListener?.('change', connectionChangeHandler)
     }
+    connectionChangeHandler = null
+    connectionRef = null
   }
 
   function detectAll() {
@@ -134,67 +158,125 @@ export function useStorageAndConnection() {
     detectConnection()
   }
 
-  // NEW: Detect WebSocket connectivity
+  function tryWebSocket(url: string, timeoutMs = 5000): Promise<number> {
+    return new Promise((resolve, reject) => {
+      let settled = false
+      const ws = new WebSocket(url)
+      const start = performance.now()
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true
+          try {
+            ws.close()
+          } catch {
+            // ignore
+          }
+          reject(new Error(`Timeout connecting to ${url}`))
+        }
+      }, timeoutMs)
+
+      ws.onopen = () => {
+        if (settled) {
+          return
+        }
+        settled = true
+        clearTimeout(timer)
+        const latency = Math.round(performance.now() - start)
+        try {
+          ws.close()
+        } catch {
+          // ignore
+        }
+        resolve(latency)
+      }
+
+      ws.onerror = () => {
+        if (settled) {
+          return
+        }
+        settled = true
+        clearTimeout(timer)
+        try {
+          ws.close()
+        } catch {
+          // ignore
+        }
+        reject(new Error(`WebSocket error for ${url}`))
+      }
+    })
+  }
+
   async function detectWebSocketConnectivity(): Promise<void> {
     webSocketSupported.value = 'WebSocket' in window
+    webSocketEndpoint.value = null
 
     if (!webSocketSupported.value) {
       webSocketCanConnect.value = false
+      webSocketError.value = 'WebSocket API not available'
       return
     }
 
-    try {
-      // Try to connect to a public echo server
-      const ws = new WebSocket('wss://echo.websocket.org/')
-      const startTime = performance.now()
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Connection timeout'))
-        }, 5000)
-
-        ws.onopen = () => {
-          clearTimeout(timeout)
-          const endTime = performance.now()
-          webSocketLatency.value = Math.round(endTime - startTime)
-          webSocketCanConnect.value = true
-          webSocketError.value = null
-          ws.close()
-          resolve()
-        }
-
-        ws.onerror = () => {
-          clearTimeout(timeout)
-          reject(new Error('WebSocket connection failed'))
-        }
-      })
-    } catch (err) {
-      webSocketCanConnect.value = false
-      webSocketError.value = (err as Error).message
+    const errors: string[] = []
+    for (const url of WS_ENDPOINTS) {
+      try {
+        const latency = await tryWebSocket(url)
+        webSocketCanConnect.value = true
+        webSocketLatency.value = latency
+        webSocketError.value = null
+        webSocketEndpoint.value = url
+        return
+      } catch (err) {
+        errors.push((err as Error).message)
+      }
     }
+
+    webSocketCanConnect.value = false
+    webSocketLatency.value = null
+    webSocketError.value = errors[errors.length - 1] || 'All WebSocket probes failed'
   }
 
   /**
-   * Best-effort IPv6 reachability probe.
-   * no-cors yields opaque responses, so success only means the browser did not
-   * surface a network error (weak signal).
+   * IPv6 reachability via image load against an IPv6-only host.
+   * Confidence is low because CDN/firewall can fail for non-IPv6 reasons.
+   * Also sets supported=true if the runtime can represent IPv6 (always true in modern browsers).
    */
-  function detectIPv6Connectivity(): void {
-    ipv6Supported.value = typeof window !== 'undefined'
-    const ipv6TestUrl = 'https://ipv6.google.com/favicon.ico'
+  function detectIPv6Connectivity(): Promise<void> {
+    ipv6Supported.value = true
+    ipv6Confidence.value = null
 
-    fetch(ipv6TestUrl, { method: 'HEAD', mode: 'no-cors', cache: 'no-store' })
-      .then(() => {
-        // Opaque success: request left the browser without a hard network failure
-        ipv6CanConnect.value = true
-      })
-      .catch(() => {
-        ipv6CanConnect.value = false
-      })
+    return new Promise(resolve => {
+      const img = new Image()
+      const url = `https://ipv6.google.com/favicon.ico?_=${Date.now()}`
+      let settled = false
+
+      const finish = (ok: boolean) => {
+        if (settled) {
+          return
+        }
+        settled = true
+        ipv6CanConnect.value = ok
+        ipv6Confidence.value = 'low'
+        resolve()
+      }
+
+      const timer = setTimeout(() => {
+        img.src = ''
+        finish(false)
+      }, 4000)
+
+      img.onload = () => {
+        clearTimeout(timer)
+        finish(true)
+      }
+      img.onerror = () => {
+        clearTimeout(timer)
+        finish(false)
+      }
+      img.src = url
+    })
   }
 
   return {
-    // State
     localStorageEnabled,
     sessionStorageEnabled,
     storageQuota,
@@ -203,23 +285,24 @@ export function useStorageAndConnection() {
     connectionDownlink,
     connectionRtt,
     connectionSaveData,
-    // NEW state
+    connectionApiAvailable,
     webSocketSupported,
     webSocketCanConnect,
     webSocketLatency,
     webSocketError,
+    webSocketEndpoint,
     ipv6Supported,
     ipv6CanConnect,
-    // Computed
+    ipv6Confidence,
     storageInfo,
     connectionInfo,
     webSocketConnectivity,
     ipv6Connectivity,
-    // Actions
     detectAll,
     detectStorage,
     detectConnection,
     detectWebSocketConnectivity,
-    detectIPv6Connectivity
+    detectIPv6Connectivity,
+    cleanup
   }
 }

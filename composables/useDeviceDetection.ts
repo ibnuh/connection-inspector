@@ -221,31 +221,52 @@ export function useDeviceDetection() {
     document.addEventListener('visibilitychange', visibilityChangeHandler)
   }
 
+  function roundSeconds(ms: number): number {
+    return Math.round((ms / 1000) * 100) / 100
+  }
+
   function detectPerformanceTiming() {
-    if (performance.timing) {
-      const timing = performance.timing
-      const navigationStart = timing.navigationStart
-      const loadEventEnd = timing.loadEventEnd
+    // Prefer Navigation Timing Level 2; fall back to deprecated performance.timing
+    const entries = performance.getEntriesByType?.('navigation') as
+      | PerformanceNavigationTiming[]
+      | undefined
+    const nav = entries?.[0]
 
-      if (loadEventEnd && navigationStart) {
-        const pageLoadTime = loadEventEnd - navigationStart
-        const dnsLookupTime = timing.domainLookupEnd - timing.domainLookupStart
-        const tcpConnectionTime = timing.connectEnd - timing.connectStart
-        const serverResponseTime = timing.responseStart - timing.requestStart
-        const pageDownloadTime = timing.responseEnd - timing.responseStart
-        const networkTime = timing.responseEnd - timing.navigationStart
-        const browserTime = loadEventEnd - timing.responseEnd
-
-        performanceTiming.value = {
-          pageLoadTime: Math.round((pageLoadTime / 1000) * 100) / 100,
-          networkTime: Math.round((networkTime / 1000) * 100) / 100,
-          dnsLookupTime: Math.round((dnsLookupTime / 1000) * 100) / 100,
-          tcpConnectionTime: Math.round((tcpConnectionTime / 1000) * 100) / 100,
-          serverResponseTime: Math.round((serverResponseTime / 1000) * 100) / 100,
-          pageDownloadTime: Math.round((pageDownloadTime / 1000) * 100) / 100,
-          browserTime: Math.round((browserTime / 1000) * 100) / 100
-        }
+    if (nav && nav.loadEventEnd > 0) {
+      performanceTiming.value = {
+        pageLoadTime: roundSeconds(nav.loadEventEnd),
+        networkTime: roundSeconds(nav.responseEnd),
+        dnsLookupTime: roundSeconds(Math.max(0, nav.domainLookupEnd - nav.domainLookupStart)),
+        tcpConnectionTime: roundSeconds(Math.max(0, nav.connectEnd - nav.connectStart)),
+        serverResponseTime: roundSeconds(Math.max(0, nav.responseStart - nav.requestStart)),
+        pageDownloadTime: roundSeconds(Math.max(0, nav.responseEnd - nav.responseStart)),
+        browserTime: roundSeconds(Math.max(0, nav.loadEventEnd - nav.responseEnd))
       }
+      return
+    }
+
+    const timing = performance.timing
+    if (!timing) {
+      performanceTiming.value = null
+      return
+    }
+
+    const navigationStart = timing.navigationStart
+    const loadEventEnd = timing.loadEventEnd
+    if (!loadEventEnd || !navigationStart) {
+      // Document may still be loading; leave null rather than zeros
+      performanceTiming.value = null
+      return
+    }
+
+    performanceTiming.value = {
+      pageLoadTime: roundSeconds(loadEventEnd - navigationStart),
+      networkTime: roundSeconds(timing.responseEnd - navigationStart),
+      dnsLookupTime: roundSeconds(timing.domainLookupEnd - timing.domainLookupStart),
+      tcpConnectionTime: roundSeconds(timing.connectEnd - timing.connectStart),
+      serverResponseTime: roundSeconds(timing.responseStart - timing.requestStart),
+      pageDownloadTime: roundSeconds(timing.responseEnd - timing.responseStart),
+      browserTime: roundSeconds(loadEventEnd - timing.responseEnd)
     }
   }
 
@@ -257,20 +278,61 @@ export function useDeviceDetection() {
     pageReferrer.value = document.referrer || 'None'
   }
 
-  function detectPrivateBrowsing() {
+  /**
+   * Multi-signal private-mode heuristic. No single API is authoritative across browsers.
+   * Returns true only when signals lean private; false when clearly normal; null if inconclusive.
+   */
+  async function detectPrivateBrowsing() {
     try {
-      const db = indexedDB.open('__private_browsing_test__')
-      db.onerror = () => {
-        privateBrowsingMode.value = true
-      }
-      db.onsuccess = () => {
-        privateBrowsingMode.value = false
-        try {
-          indexedDB.deleteDatabase('__private_browsing_test__')
-        } catch {
-          // Ignore cleanup errors
+      // Safari / WebKit often quota-limits storage in private mode
+      if (navigator.storage?.estimate) {
+        const estimate = await navigator.storage.estimate()
+        // Extremely small quota is a common private-mode signal on Safari
+        if (
+          typeof estimate.quota === 'number' &&
+          estimate.quota > 0 &&
+          estimate.quota < 120_000_000
+        ) {
+          privateBrowsingMode.value = true
+          return
         }
       }
+
+      // IndexedDB open failure is a weak Safari signal
+      const idbOk = await new Promise<boolean>(resolve => {
+        try {
+          const req = indexedDB.open('__private_browsing_test__')
+          req.onerror = () => resolve(false)
+          req.onsuccess = () => {
+            try {
+              indexedDB.deleteDatabase('__private_browsing_test__')
+            } catch {
+              // ignore
+            }
+            resolve(true)
+          }
+        } catch {
+          resolve(false)
+        }
+      })
+
+      if (!idbOk) {
+        privateBrowsingMode.value = true
+        return
+      }
+
+      // Firefox: localStorage may throw in some private configurations
+      try {
+        const key = '__pb_ls__'
+        localStorage.setItem(key, '1')
+        localStorage.removeItem(key)
+      } catch {
+        privateBrowsingMode.value = true
+        return
+      }
+
+      // No strong private signal
+      privateBrowsingMode.value = false
     } catch {
       privateBrowsingMode.value = null
     }
@@ -302,9 +364,19 @@ export function useDeviceDetection() {
     detectTls()
     detectPageVisibility()
     detectPerformanceTiming()
+    // Re-check after load completes (nav timing often zero mid-parse)
+    if (document.readyState !== 'complete') {
+      window.addEventListener(
+        'load',
+        () => {
+          detectPerformanceTiming()
+        },
+        { once: true }
+      )
+    }
     detectHistory()
     detectReferrer()
-    detectPrivateBrowsing()
+    void detectPrivateBrowsing()
     detectUserPreferences()
     detectExtendedScreenInfo()
     detectDeviceMemory()

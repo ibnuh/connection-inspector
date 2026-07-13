@@ -33,7 +33,7 @@ describe('useIpData risk helpers', () => {
     const { score, band } = scoreIpRisk(base)
     expect(score).not.toBeNull()
     if (score != null) {
-      expect(score).toBeLessThan(30)
+      expect(score).toBeLessThan(25)
     }
     expect(band).toBe('Low')
   })
@@ -48,14 +48,16 @@ describe('useIpData risk helpers', () => {
     expect(['Low', 'Medium', 'High']).toContain(band)
   })
 
-  it('labels anonymizer signals for proxy/tor/vpn', () => {
-    expect(ipStatusFromInfo({ ...base, is_proxy: true }).tone).toBe('danger')
-    expect(ipStatusFromInfo({ ...base, is_tor: true }).label).toBe('Anonymizer signals')
+  it('labels proxy/tor/vpn distinctly', () => {
+    expect(ipStatusFromInfo({ ...base, is_proxy: true }).tone).toBe('warning')
+    expect(ipStatusFromInfo({ ...base, is_proxy: true }).label).toBe('Proxy')
+    expect(ipStatusFromInfo({ ...base, is_tor: true }).label).toBe('Tor exit')
+    expect(ipStatusFromInfo({ ...base, is_vpn: true }).label).toBe('VPN')
   })
 
   it('labels datacenter as warning', () => {
     const status = ipStatusFromInfo({ ...base, is_datacenter: true })
     expect(status.tone).toBe('warning')
-    expect(status.label).toContain('Datacenter')
+    expect(status.label.toLowerCase()).toContain('datacenter')
   })
 })

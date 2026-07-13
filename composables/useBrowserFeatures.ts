@@ -9,6 +9,7 @@ import type {
   MimeTypeInfo,
   SpeechVoice
 } from '@/types'
+import { parseUserAgent, type ClientHintsInput } from '@/utils/userAgent'
 
 export function useBrowserFeatures() {
   // State
@@ -159,98 +160,103 @@ export function useBrowserFeatures() {
     timezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone ?? null
   }
 
-  function detectBrowserInfo() {
-    const ua = navigator.userAgent
-    if (!ua) return
+  function applyParsedIdentity(hints?: ClientHintsInput | null) {
+    const parsed = parseUserAgent(navigator.userAgent || '', {
+      platform: navigator.platform,
+      maxTouchPoints: navigator.maxTouchPoints ?? 0,
+      screenWidth: window.screen?.width,
+      clientHints: hints
+    })
 
-    if (ua.includes('Chrome') && !ua.includes('Edg') && !ua.includes('OPR')) {
-      browserName.value = 'Chrome'
-      const match = ua.match(/Chrome\/([\d.]+)/)
-      browserVersion.value = match ? match[1] : null
-      browserEngine.value = 'Blink'
-      trueBrowserCore.value = 'Chromium'
-    } else if (ua.includes('Firefox')) {
-      browserName.value = 'Firefox'
-      const match = ua.match(/Firefox\/([\d.]+)/)
-      browserVersion.value = match ? match[1] : null
-      browserEngine.value = 'Gecko'
-      trueBrowserCore.value = 'Gecko'
-    } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
-      browserName.value = 'Safari'
-      const match = ua.match(/Version\/([\d.]+)/)
-      browserVersion.value = match ? match[1] : null
-      browserEngine.value = 'WebKit'
-      trueBrowserCore.value = 'WebKit'
-    } else if (ua.includes('Edg')) {
-      browserName.value = 'Edge'
-      const match = ua.match(/Edg\/([\d.]+)/)
-      browserVersion.value = match ? match[1] : null
-      browserEngine.value = 'Blink'
-      trueBrowserCore.value = 'Chromium'
-    } else if (ua.includes('OPR')) {
-      browserName.value = 'Opera'
-      const match = ua.match(/OPR\/([\d.]+)/)
-      browserVersion.value = match ? match[1] : null
-      browserEngine.value = 'Blink'
-      trueBrowserCore.value = 'Chromium'
-    }
+    browserName.value = parsed.browser.name
+    browserVersion.value = parsed.browser.version
+    browserEngine.value = parsed.browser.engine
+    trueBrowserCore.value = parsed.browser.engineFamily
+
+    osName.value = parsed.os.name
+    osVersion.value = parsed.os.version
+    trueOsCore.value = parsed.os.family
+
+    deviceType.value = parsed.device.type === 'Desktop' ? 'Desktop or laptop' : parsed.device.type
+    deviceModel.value = parsed.device.model
+  }
+
+  function detectBrowserInfo() {
+    applyParsedIdentity(readLowEntropyClientHints())
   }
 
   function detectDeviceType() {
-    const ua = navigator.userAgent.toLowerCase()
-    const width = window.screen.width
-
-    if (/mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(ua)) {
-      deviceType.value = 'Mobile'
-    } else if (/tablet|ipad|playbook|silk/i.test(ua) || (width >= 600 && width <= 1024)) {
-      deviceType.value = 'Tablet'
-    } else {
-      deviceType.value = 'Desktop or laptop'
-    }
-
-    const modelMatch = ua.match(
-      /(iphone|ipad|ipod|android|windows phone|blackberry|playbook|silk)[\s/]([\w\s]+)?/i
-    )
-    if (modelMatch) {
-      deviceModel.value = modelMatch[0]
+    // Identity applied in detectBrowserInfo / refineWithClientHints
+    if (!deviceType.value) {
+      applyParsedIdentity(readLowEntropyClientHints())
     }
   }
 
   function detectOSInfo() {
-    const ua = navigator.userAgent
-    const platform = navigator.platform
+    if (!osName.value) {
+      applyParsedIdentity(readLowEntropyClientHints())
+    }
+  }
 
-    if (/mac/i.test(platform) || /mac/i.test(ua)) {
-      osName.value = 'macOS'
-      const match = ua.match(/Mac OS X ([\d_]+)/)
-      if (match) {
-        osVersion.value = match[1].replace(/_/g, '.')
+  function readLowEntropyClientHints(): ClientHintsInput | null {
+    const uaData = (
+      navigator as Navigator & {
+        userAgentData?: {
+          brands?: { brand: string; version: string }[]
+          mobile?: boolean
+          platform?: string
+        }
       }
-      trueOsCore.value = 'Darwin'
-    } else if (/win/i.test(platform) || /win/i.test(ua)) {
-      osName.value = 'Windows'
-      const match = ua.match(/Windows NT ([\d.]+)/)
-      if (match) {
-        osVersion.value = match[1]
+    ).userAgentData
+    if (!uaData) {
+      return null
+    }
+    return {
+      brands: uaData.brands,
+      mobile: uaData.mobile,
+      platform: uaData.platform
+    }
+  }
+
+  /** High-entropy Client Hints refine OS version, model, and full browser version. */
+  async function refineWithClientHints(): Promise<void> {
+    const uaData = (
+      navigator as Navigator & {
+        userAgentData?: {
+          brands?: { brand: string; version: string }[]
+          mobile?: boolean
+          platform?: string
+          getHighEntropyValues?: (hints: string[]) => Promise<ClientHintsInput>
+        }
       }
-      trueOsCore.value = 'Windows NT'
-    } else if (/linux/i.test(platform) || /linux/i.test(ua)) {
-      osName.value = 'Linux'
-      trueOsCore.value = 'Linux'
-    } else if (/android/i.test(ua)) {
-      osName.value = 'Android'
-      const match = ua.match(/Android ([\d.]+)/)
-      if (match) {
-        osVersion.value = match[1]
-      }
-      trueOsCore.value = 'Linux'
-    } else if (/iphone|ipad|ipod/i.test(ua)) {
-      osName.value = 'iOS'
-      const match = ua.match(/OS ([\d_]+)/)
-      if (match) {
-        osVersion.value = match[1].replace(/_/g, '.')
-      }
-      trueOsCore.value = 'Darwin'
+    ).userAgentData
+
+    if (!uaData?.getHighEntropyValues) {
+      return
+    }
+
+    try {
+      const high = await uaData.getHighEntropyValues([
+        'architecture',
+        'bitness',
+        'model',
+        'platformVersion',
+        'fullVersionList',
+        'uaFullVersion'
+      ])
+      applyParsedIdentity({
+        brands: uaData.brands,
+        fullVersionList: high.fullVersionList,
+        mobile: uaData.mobile,
+        platform: high.platform ?? uaData.platform,
+        platformVersion: high.platformVersion,
+        model: high.model,
+        architecture: high.architecture,
+        bitness: high.bitness,
+        uaFullVersion: high.uaFullVersion
+      })
+    } catch {
+      // User may deny high-entropy hints; keep low-entropy parse
     }
   }
 
@@ -342,47 +348,37 @@ export function useBrowserFeatures() {
   }
 
   function detectHttpHeaders() {
+    // Only values the page can actually observe. Do not invent Accept/Encoding/Connection.
     const headers: HttpHeaders = {}
     headers['User-Agent'] = navigator.userAgent
-    headers['Accept-Language'] = navigator.languages?.join(', ') || navigator.language
-    headers['Accept-Encoding'] = 'gzip, deflate, br, zstd'
-    headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    headers['DNT'] = doNotTrack.value || '0'
-    headers['Connection'] = 'keep-alive'
+    headers['Accept-Language'] = navigator.languages?.join(', ') || navigator.language || ''
+
+    if (doNotTrack.value != null && doNotTrack.value !== '') {
+      headers['DNT'] = doNotTrack.value
+    }
 
     if (document.referrer) {
       headers['Referer'] = document.referrer
     }
 
-    if (
-      (
-        navigator as Navigator & {
-          userAgentData?: {
-            brands?: { brand: string; version: string }[]
-            mobile?: boolean
-            platform?: string
-          }
+    const uaData = (
+      navigator as Navigator & {
+        userAgentData?: {
+          brands?: { brand: string; version: string }[]
+          mobile?: boolean
+          platform?: string
         }
-      ).userAgentData
-    ) {
-      const uaData = (
-        navigator as Navigator & {
-          userAgentData?: {
-            brands?: { brand: string; version: string }[]
-            mobile?: boolean
-            platform?: string
-          }
-        }
-      ).userAgentData
-      if (uaData?.brands) {
-        headers['Sec-CH-UA'] = uaData.brands.map(b => `"${b.brand}";v="${b.version}"`).join(', ')
       }
-      if (uaData?.mobile !== undefined) {
-        headers['Sec-CH-UA-Mobile'] = uaData.mobile ? '?1' : '?0'
-      }
-      if (uaData?.platform) {
-        headers['Sec-CH-UA-Platform'] = `"${uaData.platform}"`
-      }
+    ).userAgentData
+
+    if (uaData?.brands) {
+      headers['Sec-CH-UA'] = uaData.brands.map(b => `"${b.brand}";v="${b.version}"`).join(', ')
+    }
+    if (uaData?.mobile !== undefined) {
+      headers['Sec-CH-UA-Mobile'] = uaData.mobile ? '?1' : '?0'
+    }
+    if (uaData?.platform) {
+      headers['Sec-CH-UA-Platform'] = `"${uaData.platform}"`
     }
 
     httpHeaders.value = headers
@@ -566,7 +562,6 @@ export function useBrowserFeatures() {
     detectPlugins()
     detectHttpHeaders()
     detectSpeechSynthesis()
-    // NEW detection functions
     detectShareApi()
     detectPaymentRequest()
     detectCredentialManagement()
@@ -575,6 +570,7 @@ export function useBrowserFeatures() {
     detectContactPicker()
     detectWebXR()
     detectWakeLock()
+    void refineWithClientHints()
   }
 
   return {
@@ -657,6 +653,7 @@ export function useBrowserFeatures() {
     detectFileSystemAccess,
     detectContactPicker,
     detectWebXR,
-    detectWakeLock
+    detectWakeLock,
+    refineWithClientHints
   }
 }

@@ -7,7 +7,10 @@ import {
   scoreIpRisk,
   ipStatusFromInfo,
   evaluateWebRTCExposure,
-  expandIPv6
+  expandIPv6,
+  normalizeIp,
+  isSameIp,
+  parseAbuserScoreNumber
 } from '@/utils/ip'
 import type { IpApiResponse } from '@/types'
 
@@ -46,12 +49,36 @@ describe('isValidIPv6 / reverse', () => {
   })
 })
 
+describe('normalizeIp / isSameIp', () => {
+  it('unwraps IPv4-mapped IPv6', () => {
+    expect(normalizeIp('::ffff:8.8.8.8')).toBe('8.8.8.8')
+    expect(isSameIp('::ffff:8.8.8.8', '8.8.8.8')).toBe(true)
+  })
+
+  it('compares expanded IPv6', () => {
+    expect(isSameIp('2001:db8::1', '2001:0db8:0000:0000:0000:0000:0000:0001')).toBe(true)
+  })
+
+  it('strips zone ids', () => {
+    expect(normalizeIp('fe80::1%eth0')).toBe(expandIPv6('fe80::1'))
+  })
+})
+
 describe('isPrivateIP', () => {
-  it('detects private ranges', () => {
+  it('detects private ranges including CGNAT', () => {
     expect(isPrivateIP('10.0.0.1')).toBe(true)
     expect(isPrivateIP('192.168.1.1')).toBe(true)
     expect(isPrivateIP('172.16.0.1')).toBe(true)
+    expect(isPrivateIP('100.64.1.1')).toBe(true)
     expect(isPrivateIP('8.8.8.8')).toBe(false)
+  })
+})
+
+describe('parseAbuserScoreNumber', () => {
+  it('parses ratios and decimals', () => {
+    expect(parseAbuserScoreNumber('1/100')).toBeCloseTo(0.01)
+    expect(parseAbuserScoreNumber('0.12')).toBeCloseTo(0.12)
+    expect(parseAbuserScoreNumber(0.5)).toBe(0.5)
   })
 })
 
@@ -60,10 +87,10 @@ describe('scoreIpRisk', () => {
     expect(scoreIpRisk(null)).toEqual({ score: null, band: 'Unknown' })
   })
 
-  it('scores normal low', () => {
+  it('scores clean IP as zero low', () => {
     const info: IpApiResponse = { ip: '1.1.1.1' }
     const result = scoreIpRisk(info)
-    expect(result.score).toBe(5)
+    expect(result.score).toBe(0)
     expect(result.band).toBe('Low')
   })
 
@@ -74,21 +101,30 @@ describe('scoreIpRisk', () => {
       is_tor: true
     }
     const result = scoreIpRisk(info)
-    expect(result.score).toBeGreaterThanOrEqual(70)
+    expect(result.score).toBeGreaterThanOrEqual(60)
     expect(result.band).toBe('High')
   })
 
-  it('scores vpn as medium-ish', () => {
+  it('scores vpn alone as medium-low warning territory', () => {
     const info: IpApiResponse = { ip: '1.1.1.1', is_vpn: true }
     const result = scoreIpRisk(info)
+    expect(result.score).toBe(12)
     expect(result.band).toBe('Low')
-    expect(result.score).toBe(10)
   })
 })
 
 describe('ipStatusFromInfo', () => {
-  it('uses anonymizer wording for vpn', () => {
-    expect(ipStatusFromInfo({ is_vpn: true }).label).toBe('Anonymizer signals')
+  it('prioritizes abuse over vpn', () => {
+    expect(ipStatusFromInfo({ is_abuser: true, is_vpn: true }).label).toBe('Abuse-listed')
+  })
+
+  it('labels vpn without calling it abuse', () => {
+    expect(ipStatusFromInfo({ is_vpn: true }).label).toBe('VPN')
+    expect(ipStatusFromInfo({ is_vpn: true }).tone).toBe('warning')
+  })
+
+  it('labels tor exit', () => {
+    expect(ipStatusFromInfo({ is_tor: true }).label).toBe('Tor exit')
   })
 })
 
@@ -103,10 +139,24 @@ describe('evaluateWebRTCExposure', () => {
     const r = evaluateWebRTCExposure([], ['9.9.9.9'], '1.2.3.4')
     expect(r.hasPublicMismatch).toBe(true)
     expect(r.hasLeak).toBe(true)
+    expect(r.mismatchedPublicIps).toContain('9.9.9.9')
   })
 
   it('is clean when public matches egress and no local', () => {
     const r = evaluateWebRTCExposure([], ['1.2.3.4'], '1.2.3.4')
     expect(r.hasLeak).toBe(false)
+    expect(r.matchingPublicIps).toContain('1.2.3.4')
+  })
+
+  it('treats IPv4-mapped match as same egress', () => {
+    const r = evaluateWebRTCExposure([], ['::ffff:1.2.3.4'], '1.2.3.4')
+    expect(r.hasPublicMismatch).toBe(false)
+    expect(r.hasLeak).toBe(false)
+  })
+
+  it('does not treat public ICE alone as leak without egress', () => {
+    const r = evaluateWebRTCExposure([], ['9.9.9.9'], null)
+    expect(r.hasLeak).toBe(false)
+    expect(r.hasPublicMismatch).toBe(false)
   })
 })

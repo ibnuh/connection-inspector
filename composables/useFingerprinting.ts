@@ -1,192 +1,191 @@
 import { ref, computed } from 'vue'
-import type { 
-  FingerprintingInfo, 
-  CanvasFingerprintingStatus, 
-  AudioContextFingerprintingStatus 
+import type {
+  FingerprintingInfo,
+  CanvasFingerprintingStatus,
+  AudioContextFingerprintingStatus
 } from '@/types'
+import { detectInstalledFonts, FONT_CANDIDATES } from '@/utils/fonts'
+import { scorePrivacyResistance } from '@/utils/privacy'
 
 export function useFingerprinting() {
-  // State
   const canvasFingerprinting = ref<CanvasFingerprintingStatus>(null)
   const audioContextFingerprinting = ref<AudioContextFingerprintingStatus>(null)
   const fontsDetected = ref<string[]>([])
   const adBlockerDetected = ref<boolean | null>(null)
-  
-  // Computed
+  const doNotTrackHint = ref<string | null>(null)
+  const cookiesHint = ref<boolean | null>(null)
+
   const fingerprintingResistance = computed(() => {
-    return canvasFingerprinting.value === 'Spoofed' || audioContextFingerprinting.value === 'Blocked'
+    return (
+      canvasFingerprinting.value === 'Spoofed' || audioContextFingerprinting.value === 'Blocked'
+    )
   })
-  
+
   const fingerprintingInfo = computed<FingerprintingInfo>(() => ({
     canvas: canvasFingerprinting.value,
     audioContext: audioContextFingerprinting.value,
     resistance: fingerprintingResistance.value
   }))
-  
+
   const privacyScore = computed<number | null>(() => {
-    // Rough heuristic - higher score means more private
-    let score = 0
-    
-    if (canvasFingerprinting.value === 'Spoofed') score += 25
-    else if (canvasFingerprinting.value === 'Supported') score += 10
-    
-    if (audioContextFingerprinting.value === 'Blocked') score += 25
-    else if (audioContextFingerprinting.value === 'Allowed') score += 10
-    
-    if (adBlockerDetected.value === true) score += 20
-    
-    if (fontsDetected.value.length > 0 && fontsDetected.value.length < 10) score += 10
-    else if (fontsDetected.value.length > 20) score -= 5
-    
-    return Math.max(0, Math.min(100, score))
+    return scorePrivacyResistance({
+      canvas: canvasFingerprinting.value,
+      audio: audioContextFingerprinting.value,
+      adBlocker: adBlockerDetected.value,
+      fontCount: fontsDetected.value.length || null,
+      dnt: doNotTrackHint.value,
+      cookiesEnabled: cookiesHint.value
+    }).score
   })
-  
-  const privacyProfile = computed<'Low' | 'Medium' | 'High' | 'Unknown'>(() => {
-    const s = privacyScore.value
-    if (s == null) return 'Unknown'
-    if (s < 30) return 'Low'
-    if (s < 70) return 'Medium'
-    return 'High'
+
+  const privacyProfile = computed(() => {
+    return scorePrivacyResistance({
+      canvas: canvasFingerprinting.value,
+      audio: audioContextFingerprinting.value,
+      adBlocker: adBlockerDetected.value,
+      fontCount: fontsDetected.value.length || null,
+      dnt: doNotTrackHint.value,
+      cookiesEnabled: cookiesHint.value
+    }).profile
   })
-  
-  // Detection functions
+
+  /**
+   * Canvas: "Supported" means readable fingerprint data is available.
+   * "Spoofed" only when two identical draws diverge (noise injection / resistance).
+   * Note: many privacy tools return stable noise, so absence of divergence does not
+   * prove lack of protection.
+   */
   function detectCanvasFingerprinting() {
     try {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
+      const draw = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 240
+        canvas.height = 60
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          return null
+        }
+        ctx.textBaseline = 'top'
+        ctx.font = '14px Arial'
+        ctx.fillStyle = '#f60'
+        ctx.fillRect(10, 10, 100, 30)
+        ctx.fillStyle = '#069'
+        ctx.fillText('Canvas fingerprint test 🦞', 2, 2)
+        ctx.strokeStyle = 'rgba(100,200,50,0.7)'
+        ctx.beginPath()
+        ctx.arc(50, 25, 12, 0, Math.PI * 2)
+        ctx.stroke()
+        return canvas.toDataURL()
+      }
+
+      const a = draw()
+      const b = draw()
+      if (a == null || b == null) {
         canvasFingerprinting.value = 'Not Supported'
         return
       }
-      
-      ctx.textBaseline = 'top'
-      ctx.font = '14px Arial'
-      ctx.fillText('Canvas fingerprint test', 2, 2)
-      const dataURL = canvas.toDataURL()
-      
-      const test2 = document.createElement('canvas')
-      const ctx2 = test2.getContext('2d')
-      if (ctx2) {
-        ctx2.textBaseline = 'top'
-        ctx2.font = '14px Arial'
-        ctx2.fillText('Canvas fingerprint test', 2, 2)
-        const dataURL2 = test2.toDataURL()
-        
-        if (dataURL === dataURL2) {
-          canvasFingerprinting.value = 'Supported'
-        } else {
-          canvasFingerprinting.value = 'Spoofed'
-        }
-      }
+      canvasFingerprinting.value = a === b ? 'Supported' : 'Spoofed'
     } catch {
       canvasFingerprinting.value = 'Not Supported'
     }
   }
-  
+
   function detectAudioContextFingerprinting() {
     try {
-      if (typeof AudioContext !== 'undefined' || typeof (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext !== 'undefined') {
-        const AudioContextClass = AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-        if (AudioContextClass) {
-          const context = new AudioContextClass()
-          const oscillator = context.createOscillator()
-          const analyser = context.createAnalyser()
-          const gainNode = context.createGain()
-          context.createScriptProcessor(4096, 1, 1)
-          
-          oscillator.connect(analyser)
-          analyser.connect(gainNode)
-          gainNode.connect(context.destination)
-          oscillator.start(0)
-          
-          audioContextFingerprinting.value = 'Allowed'
-          oscillator.stop()
-          context.close()
-        }
-      } else {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+
+      if (!AudioContextClass) {
         audioContextFingerprinting.value = 'Not Supported'
+        return
       }
+
+      const context = new AudioContextClass()
+      // Creating context is enough to know API is usable; avoid audible graph
+      audioContextFingerprinting.value = 'Allowed'
+      void context.close()
     } catch {
       audioContextFingerprinting.value = 'Blocked'
     }
   }
-  
+
   function detectFonts() {
-    // Extended list of fonts for better fingerprinting detection
-    const commonFonts = [
-      // Standard fonts
-      'Arial', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 
-      'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS', 'Trebuchet MS', 
-      'Arial Black', 'Impact', 'Helvetica', 'Tahoma', 'Geneva',
-      // Web-safe fonts
-      'Courier', 'Monaco', 'Menlo', 'Consolas', 'Roboto', 'Open Sans',
-      'Lato', 'Montserrat', 'Oswald', 'Raleway', 'PT Sans',
-      // System fonts
-      'Segoe UI', 'San Francisco', '-apple-system', 'BlinkMacSystemFont',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
-      // Microsoft Office fonts
-      'Calibri', 'Cambria', 'Candara', 'Constantia', 'Corbel',
-      'Franklin Gothic Medium', 'Century Gothic', 'Copperplate',
-      // Serif fonts
-      'Baskerville', 'Times', 'Didot', 'Bodoni', 'Goudy Old Style',
-      'Century Schoolbook', 'Rockwell', 'Perpetua', 'Bell MT',
-      // Decorative fonts (often present)
-      'Papyrus', 'Brush Script MT', 'Chalkboard', 'Marker Felt',
-      // Emoji-related
-      'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'
-    ]
-    
-    fontsDetected.value = commonFonts.filter(font => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return false
-      
-      const testString = 'abcdefghijklmnopqrstuvwxyz0123456789@#$%^&*'
-      const baseline = ctx.measureText(testString).width
-      ctx.font = `16px "${font}", monospace`
-      const width = ctx.measureText(testString).width
-      return width !== baseline
-    })
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      fontsDetected.value = []
+      return
+    }
+
+    const measure = (fontCss: string) => {
+      ctx.font = fontCss
+      return ctx.measureText('mmmmmmmmmmlliwi@#$%').width
+    }
+
+    fontsDetected.value = detectInstalledFonts([...FONT_CANDIDATES], measure)
   }
-  
+
   function detectAdBlocker() {
+    // Heuristic only: bait element with ad-like class names
     const testDiv = document.createElement('div')
     testDiv.innerHTML = '&nbsp;'
-    testDiv.className = 'adsbox'
-    testDiv.style.position = 'absolute'
-    testDiv.style.left = '-9999px'
+    testDiv.className = 'adsbox ad-banner adsbygoogle'
+    testDiv.setAttribute('id', 'ad-banner-test')
+    testDiv.style.cssText =
+      'position:absolute;left:-9999px;width:1px;height:1px;pointer-events:none;'
     document.body.appendChild(testDiv)
-    
-    setTimeout(() => {
-      const isBlocked = testDiv.offsetHeight === 0 || testDiv.style.display === 'none' || testDiv.style.visibility === 'hidden'
-      adBlockerDetected.value = isBlocked
-      document.body.removeChild(testDiv)
-    }, 100)
+
+    // Double rAF so layout settles
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const style = window.getComputedStyle(testDiv)
+        const isBlocked =
+          testDiv.offsetHeight === 0 ||
+          testDiv.offsetParent === null ||
+          style.display === 'none' ||
+          style.visibility === 'hidden' ||
+          style.opacity === '0'
+
+        adBlockerDetected.value = isBlocked
+        testDiv.remove()
+      })
+    })
   }
-  
-  function detectAll() {
+
+  function setPrivacyHints(hints: { doNotTrack?: string | null; cookiesEnabled?: boolean | null }) {
+    if (hints.doNotTrack !== undefined) {
+      doNotTrackHint.value = hints.doNotTrack
+    }
+    if (hints.cookiesEnabled !== undefined) {
+      cookiesHint.value = hints.cookiesEnabled
+    }
+  }
+
+  function detectAll(hints?: { doNotTrack?: string | null; cookiesEnabled?: boolean | null }) {
+    if (hints) {
+      setPrivacyHints(hints)
+    }
     detectCanvasFingerprinting()
     detectAudioContextFingerprinting()
     detectFonts()
     detectAdBlocker()
   }
-  
+
   return {
-    // State
     canvasFingerprinting,
     audioContextFingerprinting,
     fontsDetected,
     adBlockerDetected,
-    // Computed
     fingerprintingResistance,
     fingerprintingInfo,
     privacyScore,
     privacyProfile,
-    // Actions
     detectAll,
     detectCanvasFingerprinting,
     detectAudioContextFingerprinting,
     detectFonts,
-    detectAdBlocker
+    detectAdBlocker,
+    setPrivacyHints
   }
 }

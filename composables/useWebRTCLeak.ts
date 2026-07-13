@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import type { WebRTCLeakInfo, WebRTCIceCandidate } from '@/types'
-import { isPrivateIP, evaluateWebRTCExposure } from '@/utils/ip'
+import { isPrivateIP, evaluateWebRTCExposure, isValidIP, normalizeIp } from '@/utils/ip'
 
 /**
  * Detect WebRTC IP exposure via ICE candidates (STUN).
@@ -17,26 +17,31 @@ export function useWebRTCLeak() {
     const publicIps: string[] = []
 
     for (const candidate of candidates.value) {
-      if (!candidate.address) {
+      if (!candidate.address || !isValidIP(candidate.address.split('%')[0])) {
         continue
       }
-      if (isPrivateIP(candidate.address)) {
-        if (!localIps.includes(candidate.address)) {
-          localIps.push(candidate.address)
+      const addr = candidate.address
+      if (isPrivateIP(addr)) {
+        if (!localIps.includes(addr)) {
+          localIps.push(addr)
         }
-      } else if (!publicIps.includes(candidate.address)) {
-        publicIps.push(candidate.address)
+      } else {
+        const n = normalizeIp(addr)
+        if (n && !publicIps.some(p => normalizeIp(p) === n)) {
+          publicIps.push(addr)
+        }
       }
     }
 
     const evaluation = evaluateWebRTCExposure(localIps, publicIps, egressIp.value)
+    const tested = candidates.value.length > 0 || error.value != null
 
     return {
       localIps,
       publicIps,
-      hasLeak: candidates.value.length === 0 ? null : evaluation.hasLeak,
-      hasLocalExposure: candidates.value.length === 0 ? null : evaluation.hasLocalExposure,
-      hasPublicMismatch: candidates.value.length === 0 ? null : evaluation.hasPublicMismatch,
+      hasLeak: tested ? evaluation.hasLeak : null,
+      hasLocalExposure: tested ? evaluation.hasLocalExposure : null,
+      hasPublicMismatch: tested ? evaluation.hasPublicMismatch : null,
       candidateCount: candidates.value.length,
       egressIp: egressIp.value
     }
@@ -46,26 +51,36 @@ export function useWebRTCLeak() {
     egressIp.value = ip ?? null
   }
 
-  function extractIPFromCandidate(candidateStr: string): {
-    address: string
-    port: number
-    protocol: 'udp' | 'tcp' | null
-    type: 'host' | 'srflx' | 'prflx' | 'relay' | null
-  } | null {
+  function extractIPFromCandidate(candidateStr: string): WebRTCIceCandidate | null {
+    // candidate:foundation component protocol priority address port typ type ...
     const candidateRegex =
-      /candidate:\S+\s+\d+\s+(udp|tcp)\s+\d+\s+([\d.:a-fA-F]+)\s+(\d+)\s+typ\s+(host|srflx|prflx|relay)/i
+      /candidate:\S+\s+\d+\s+(udp|tcp)\s+\d+\s+(\S+)\s+(\d+)\s+typ\s+(host|srflx|prflx|relay)/i
     const match = candidateStr.match(candidateRegex)
 
-    if (match) {
-      return {
-        address: match[2],
-        port: parseInt(match[3], 10),
-        protocol: match[1].toLowerCase() as 'udp' | 'tcp',
-        type: match[4].toLowerCase() as 'host' | 'srflx' | 'prflx' | 'relay'
-      }
+    if (!match) {
+      return null
     }
 
-    return null
+    let address = match[2]
+    // Strip surrounding brackets for IPv6
+    if (address.startsWith('[') && address.endsWith(']')) {
+      address = address.slice(1, -1)
+    }
+
+    // Skip .local mDNS hostnames; they are not IPs
+    if (!isValidIP(address.split('%')[0]) && address.includes('.local')) {
+      return null
+    }
+    if (!isValidIP(address.split('%')[0])) {
+      return null
+    }
+
+    return {
+      address,
+      port: parseInt(match[3], 10),
+      protocol: match[1].toLowerCase() as 'udp' | 'tcp',
+      type: match[4].toLowerCase() as 'host' | 'srflx' | 'prflx' | 'relay'
+    }
   }
 
   async function testWebRTCLeak(currentEgressIp?: string | null): Promise<void> {
@@ -91,6 +106,7 @@ export function useWebRTCLeak() {
       })
 
       const dataChannel = pc.createDataChannel('test')
+      const seen = new Set<string>()
 
       const candidatePromise = new Promise<void>(resolve => {
         const timeout = setTimeout(() => {
@@ -98,10 +114,14 @@ export function useWebRTCLeak() {
         }, 5000)
 
         pc.onicecandidate = event => {
-          if (event.candidate && event.candidate.candidate) {
+          if (event.candidate?.candidate) {
             const extracted = extractIPFromCandidate(event.candidate.candidate)
             if (extracted) {
-              candidates.value.push(extracted)
+              const key = `${extracted.address}|${extracted.port}|${extracted.type}`
+              if (!seen.has(key)) {
+                seen.add(key)
+                candidates.value.push(extracted)
+              }
             }
           } else {
             clearTimeout(timeout)
