@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://browser.ibnuh.dev/sitemap.xml
