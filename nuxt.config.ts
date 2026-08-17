@@ -17,6 +17,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      htmlAttrs: { lang: 'en' },
       title: 'Connection Inspector',
       meta: [
         {
@@ -24,7 +25,21 @@ export default defineNuxtConfig({
           content:
             'Inspect your IP address, browser, device, and connection details in one simple, mobile-friendly page.'
         },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: 'Connection Inspector' },
+        {
+          property: 'og:description',
+          content:
+            'Inspect your IP address, browser, device, and connection details in one simple, mobile-friendly page.'
+        },
+        { property: 'og:url', content: 'https://browser.ibnuh.dev/' },
+        { property: 'og:site_name', content: 'Connection Inspector' },
+        { name: 'twitter:card', content: 'summary' }
+      ],
+      link: [
+        { rel: 'canonical', href: 'https://browser.ibnuh.dev/' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
       ]
     }
   }
