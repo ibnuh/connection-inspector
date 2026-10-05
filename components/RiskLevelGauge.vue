@@ -31,8 +31,9 @@
       />
     </div>
     <p class="text-[0.7rem] text-slate-500">
-      Heuristic from ipapi.is flags: abuse listing, Tor, proxy, VPN, datacenter, bogon, and ASN /
-      company abuser scores. VPN alone is warning-level, not equivalent to abuse.
+      Heuristic from provider flags: abuse listing, Tor, proxy, VPN, datacenter, bogon, ASN /
+      company abuser scores, and the provider risk score. VPN alone is warning-level, not equivalent
+      to abuse.
     </p>
   </div>
 </template>

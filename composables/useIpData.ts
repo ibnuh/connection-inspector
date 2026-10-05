@@ -1,6 +1,47 @@
 import { ref, computed } from 'vue'
 import type { IpApiResponse, RiskInfo, ServerViewData } from '@/types'
-import { scoreIpRisk, ipStatusFromInfo } from '@/utils/ip'
+import {
+  scoreIpRisk,
+  ipStatusFromInfo,
+  normalizeIpQueryResponse,
+  normalizeIpApiIsResponse,
+  IPQUERY_URL,
+  IPAPI_URL
+} from '@/utils/ip'
+
+/**
+ * Fetch IP info from the primary provider (ipquery.io, same one
+ * Flow.Launcher.Plugin.IPDetails uses) with api.ipapi.is as fallback.
+ * Returns the first payload that normalizes to a usable result.
+ */
+export async function fetchIpInfoWithFallback(
+  fetchFn: typeof fetch = fetch
+): Promise<IpApiResponse> {
+  const providers = [
+    { name: 'ipquery.io', url: IPQUERY_URL, normalize: normalizeIpQueryResponse },
+    { name: 'api.ipapi.is', url: IPAPI_URL, normalize: normalizeIpApiIsResponse }
+  ] as const
+
+  const failures: string[] = []
+  for (const provider of providers) {
+    try {
+      const start = performance.now()
+      const res = await fetchFn(provider.url)
+      if (!res.ok) {
+        throw new Error(`request failed with status ${res.status}`)
+      }
+      const data = provider.normalize(await res.json())
+      if (!data?.ip) {
+        throw new Error('returned an unexpected payload')
+      }
+      data.client_rtt_ms = Math.round(performance.now() - start)
+      return data
+    } catch (err) {
+      failures.push(`${provider.name} (${err instanceof Error ? err.message : 'unknown error'})`)
+    }
+  }
+  throw new Error(`all providers failed: ${failures.join('; ')}`)
+}
 
 /**
  * Composable for managing IP data, risk assessment, server view comparison, and reverse DNS.
@@ -31,21 +72,7 @@ export function useIpData() {
     loadingIp.value = true
     ipError.value = null
     try {
-      const start = performance.now()
-      const res = await fetch('https://api.ipapi.is/')
-      if (!res.ok) {
-        throw new Error(`Request failed with status ${res.status}`)
-      }
-      const raw: unknown = await res.json()
-      if (!raw || typeof raw !== 'object') {
-        throw new Error('IP API returned an unexpected payload')
-      }
-      const data = raw as IpApiResponse
-      if (data.ip != null && typeof data.ip !== 'string') {
-        throw new Error('IP API payload missing a valid ip field')
-      }
-      const end = performance.now()
-      data.client_rtt_ms = Math.round(end - start)
+      const data = await fetchIpInfoWithFallback()
       ipInfo.value = data
       lastIp.value = data.ip ?? lastIp.value
     } catch (err) {
