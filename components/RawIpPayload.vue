@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import type { IpApiResponse } from '@/types'
 
   const props = defineProps<{
@@ -7,6 +7,9 @@
   }>()
 
   const showRawIpPayload = ref(false)
+  const providerLabel = computed(() =>
+    props.ipInfo?.provider === 'ipapi' ? 'api.ipapi.is' : 'ipquery.io'
+  )
 </script>
 
 <template>
@@ -18,7 +21,7 @@
     >
       <span class="flex items-center gap-1.5">
         <span class="h-1.5 w-1.5 rounded-full bg-slate-500" />
-        Raw ipapi.is payload
+        Raw {{ providerLabel }} payload
       </span>
       <span class="text-slate-500">
         {{ showRawIpPayload ? 'Hide' : 'Show' }}

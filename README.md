@@ -1,6 +1,6 @@
 # Connection Inspector
 
-A comprehensive, mobile-friendly tool that displays detailed information about your connection, browser, device, and privacy exposure. Inspired by [`deviceinfo.me`](https://www.deviceinfo.me/) and powered by [`ipapi.is`](https://api.ipapi.is/).
+A comprehensive, mobile-friendly tool that displays detailed information about your connection, browser, device, and privacy exposure. Inspired by [`deviceinfo.me`](https://www.deviceinfo.me/) and powered by [`ipquery.io`](https://ipquery.io/) (the same provider as `Flow.Launcher.Plugin.IPDetails`), with [`api.ipapi.is`](https://api.ipapi.is/) as fallback.
 
 ## Tech Stack
 

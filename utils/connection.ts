@@ -7,14 +7,7 @@
  */
 
 export type ConnectionTransport =
-  | 'bluetooth'
-  | 'cellular'
-  | 'ethernet'
-  | 'none'
-  | 'wifi'
-  | 'wimax'
-  | 'other'
-  | 'unknown'
+  'bluetooth' | 'cellular' | 'ethernet' | 'none' | 'wifi' | 'wimax' | 'other' | 'unknown'
 
 export type EffectiveConnectionType = 'slow-2g' | '2g' | '3g' | '4g'
 
@@ -88,7 +81,7 @@ export function formatConnectionSummary(input: {
   return 'Not reported'
 }
 
-/** IP-derived network context (ipapi flags), not browser NetInfo. */
+/** IP-derived network context (provider flags), not browser NetInfo. */
 export function formatIpNetworkContext(flags: {
   isMobile?: boolean | null
   isDatacenter?: boolean | null

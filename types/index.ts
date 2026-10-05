@@ -1,4 +1,5 @@
 // IP and Network types
+export type IpProvider = 'ipquery' | 'ipapi'
 export interface AbuseContact {
   name?: string
   address?: string
@@ -60,6 +61,10 @@ export interface LocationInfo {
 
 export interface IpApiResponse {
   ip?: string
+  /** Which provider answered this payload. Absent on pre-migration snapshots. */
+  provider?: IpProvider
+  /** Provider risk score 0-100 (ipquery.io). Adds weight in scoreIpRisk. */
+  risk_score?: number
   rir?: string
   is_bogon?: boolean
   is_mobile?: boolean

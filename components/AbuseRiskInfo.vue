@@ -26,18 +26,24 @@
           Marked as abusive &mdash; this IP or network has elevated abuse reports.
         </span>
         <span v-else>
-          Not flagged as abusive by ipapi.is, but other providers may still enforce their own
-          checks.
+          Not flagged as abusive, but other providers may still enforce their own checks.
         </span>
       </span>
       <span v-else> Waiting for IP data&hellip; </span>
     </dd>
-    <dd v-if="props.ipInfo?.asn || props.ipInfo?.company" class="text-[0.7rem] text-slate-500">
+    <dd
+      v-if="props.ipInfo?.asn?.abuser_score != null || props.ipInfo?.company?.abuser_score != null"
+      class="text-[0.7rem] text-slate-500"
+    >
       Abuse scores (ASN / company):
       <span class="font-medium text-slate-300">
         {{ formatAbuserScore(props.ipInfo?.asn?.abuser_score) }} /
         {{ formatAbuserScore(props.ipInfo?.company?.abuser_score) }}
       </span>
+    </dd>
+    <dd v-else-if="props.ipInfo?.risk_score != null" class="text-[0.7rem] text-slate-500">
+      Provider risk score (ipquery.io):
+      <span class="font-medium text-slate-300"> {{ props.ipInfo.risk_score }} / 100 </span>
     </dd>
   </div>
 </template>
